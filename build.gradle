@@ -1,0 +1,102 @@
+import ch.hslu.cobau.asm.AsmProperties
+import ch.hslu.cobau.asm.CompileAsmTask
+import ch.hslu.cobau.asm.LinkAsmTask
+import ch.hslu.cobau.test.TestRunnerTask
+
+plugins {
+    id 'base'
+    id 'java'
+    id 'antlr'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:4.8"
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+}
+
+// create a "fat" jar (includes all dependencies)
+jar {
+    manifest {
+        attributes('Main-Class': 'ch.hslu.cobau.minij.MiniJCompiler')
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+sourceSets {
+    testconv {
+        java {
+            srcDirs = ['src/testconv/java']
+        }
+    }
+}
+
+ext {
+    srcDirPath = 'src'
+    files = file(srcDirPath).listFiles()
+    asmDirs = []
+    files.each { File file -> if ((new File(file, 'asm')).exists()) { asmDirs += file } }
+}
+
+generateGrammarSource {
+    arguments += [ "-visitor" ]
+}
+
+afterEvaluate {
+    ext.asmDirs.each { File file ->
+        def compileTaskName = 'compileAsm' + file.name
+
+        tasks.create(name: compileTaskName, type: CompileAsmTask, group: 'build') {
+            inputDir  = fileTree("$srcDirPath/${file.name}/asm")
+            outputDir = new File("$buildDir/objects/${file.name}")
+        }
+    }
+
+    ext.asmDirs.each { File file ->
+        def compileTaskName = 'compileAsm' + file.name
+        def linkTaskName    = 'linkAsm'    + file.name
+
+        if (file.name != "runtime") {
+            def source = fileTree("$buildDir/objects/" + file.name).matching { include "**/*." + AsmProperties.objectSuffix }
+            def runtime = fileTree("$buildDir/objects/runtime").matching { include "**/*." + AsmProperties.objectSuffix }
+            source = source.plus(runtime);
+            tasks.create(name: linkTaskName, type: LinkAsmTask, dependsOn: compileTaskName, group: 'build') {
+                inputObjects = source
+                target       = project.file("$buildDir/" + file.name)
+            }
+            tasks.getByName(linkTaskName).dependsOn(tasks.getByName('compileAsmruntime'))
+            tasks.getByName('assemble').dependsOn(tasks.getByName(linkTaskName))
+        } else {
+            tasks.getByName('assemble').dependsOn(tasks.getByName(compileTaskName))
+        }
+    }
+
+    fileTree(file("tests")).matching { include "*.json"}.each { File file ->
+        def testTaskName = "systemTests" + file.getName().replace(".json", "")
+        tasks.create(name : testTaskName, type: TestRunnerTask, dependsOn: assemble, group: 'verification') {
+            testSet file
+        }
+
+        tasks.getByName('check').dependsOn(tasks.getByName(testTaskName))
+    }
+
+    def submissionTask = tasks.create(name : 'makeSubmission', type: Zip, group: 'build') {
+        archiveFileName = "COBAU-MSx-Gyy.zip"
+        destinationDirectory = layout.projectDirectory
+        from(layout.projectDirectory.dir("reports")) {
+            into "reports"
+        }
+        from(layout.projectDirectory.dir("src")) {
+            into "src"
+        }
+    }
+    submissionTask.dependsOn(tasks.getByName('build'));
+}

@@ -1,0 +1,100 @@
+{ 
+  "name"                  : "Expansion by three",
+  "commandline"           : "${buildDir}/div2${exec_ext}",
+  "description"           : "A set of system tests to verify, whether the multiply program works as specified",
+  "timeoutMilliseconds"   : 500,
+
+  "testCases" : [
+    {
+        "name"           : "single digit (zero)",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "0\n",
+        "expectedOutput" : "0",
+        "maxTime"        : 500,
+        "score"          : 4
+    },
+    {
+        "name"           : "single digit (uneven)",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "5\n",
+        "expectedOutput" : "2",
+        "maxTime"        : 500,
+        "score"          : 4
+    },
+    {
+        "name"           : "two digits (even)",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "50\n",
+        "expectedOutput" : "25",
+        "maxTime"        : 500,
+        "score"          : 2
+    },
+    {
+        "name"           : "two digits (uneven)",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "51\n",
+        "expectedOutput" : "25",
+        "maxTime"        : 500,
+        "score"          : 2
+    },
+    {
+      "name"           : "text",
+      "precondition"   : [],
+      "args"           : "",
+      "input"          : "42\n",
+      "expectedOutput" : "Please enter an integer value:\nThe result of value / 2 is: 21",
+      "maxTime"        : 500,
+      "score"          : 2
+    },
+    {
+        "name"           : "negative",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "-679\n",
+        "expectedOutput" : "-339",
+        "maxTime"        : 500,
+        "score"          : 2
+    },
+
+    {
+        "name"           : "large (positive)",
+        "precondition"   : [],
+        "args"           : "",
+        "input"          : "1235\n",
+        "expectedOutput" : "617",
+        "maxTime"        : 500,
+        "score"          : 1
+    },
+    {
+      "name"           : "large (negative)",
+      "precondition"   : [],
+      "args"           : "",
+      "input"          : "-1235\n",
+      "expectedOutput" : "-617",
+      "maxTime"        : 500,
+      "score"          : 1
+    },
+    {
+      "name"           : "64-bit (maximal positive)",
+      "precondition"   : [],
+      "args"           : "",
+      "input"          : "9223372036854775807\n",
+      "expectedOutput" : "4611686018427387903",
+      "maxTime"        : 500,
+      "score"          : 1
+    },
+    {
+      "name"           : "64-bit (maximal negative)",
+      "precondition"   : [],
+      "args"           : "",
+      "input"          : "-9223372036854775808\n",
+      "expectedOutput" : "-4611686018427387904",
+      "maxTime"        : 500,
+      "score"          : 1
+    }
+  ]
+}
