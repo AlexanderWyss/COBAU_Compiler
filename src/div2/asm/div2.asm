@@ -8,7 +8,7 @@ extern _exit
 ; export entry point
 global _start
     LENGTH EQU 20
-    section .bss ; uninitialized data
+section .bss ; uninitialized data
     alignb 8 ; align to 8 bytes (for 64-bit machine)
     BUFFER resb LENGTH ; buffer (64 bytes)
 
@@ -18,24 +18,68 @@ _start:
             push  rbp                   ; store pointer to previous frame, and additionally
                                         ; ensure that the stack is aligned for the subsequent
                                         ; function calls. Required for Windows and MacOS.
-
+readInput:
 ; implement divider (milestone 1)
             mov rdi, BUFFER ; copy pointer to BUFFER into rdi
             mov rsi, LENGTH ; copy length of byte array into rsi
-            call _read ; execute system call
-            mov r8, rax ; backup input length
+            call _read ; read input, length of input in rax
 
-            mov rax, [BUFFER] ; read first value from buffer
-            sub rax, 48 ; convert to number
-            sar rax, 1 ; divide by 2
-            add rax, 48 ; convert to string
-            mov [BUFFER], rax ;write back
+bufferToNumber: ; expects buffer initialized and length in rax
+            sub rax, 1 ; TODO remove \n\r
+            mov r9, rax ; mover buffer length to r9
+            mov r8, 0 ; init number with zero in r8
+            mov rcx, 0 ; init loop counter to rcx
 
-            mov rax, r8
+bufferToNumberLoop: ; r8=number, rcx=index, r9=buffer_length
+            mov rax, BUFFER ; set rax to start of buffer
+            add rax, r9 ; add length to position of buffer
+            sub rax, rcx
             sub rax, 1
+            movzx rdx, byte [rax] ; read value of buffer
+            sub rdx, 48 ; convert ascii to number
+            cmp rcx, 0 ; if index is 0 10^0
+            je bufferToNumberOfTenthPowerLoopEnd
+            mov rax, 0 ; init index of tenth power loop
+bufferToNumberTenthPowerLoopStart:
+            imul rdx, 10 ; multiply number by 10
+            add rax, 1 ; add 1 to inner loop counter
+            cmp rax, rcx ; if inner loop lower then outerloop multipl by ten again
+            jl bufferToNumberTenthPowerLoopStart
+bufferToNumberOfTenthPowerLoopEnd:
+            add rdx, r8 ; add digit to number
+            mov r8, rdx ; write back number
+            add rcx, 1; increment index
+            cmp rcx, r9
+            jl bufferToNumberLoop
+
+divide:
+            mov rax, r8
+            sar rax, 1 ; divide by 2
+            mov r8, rax
+
+numberToBuffer: ; r8=number, rbx=buffer begin address
+            mov rcx, 0 ; buffer length
+            mov rbx, BUFFER
+            add rbx, LENGTH
+
+numberToBufferLoopStart:
+            sub rbx, 1 ; buffer index -1
+            mov rdx, 0
+            mov rax, r8
+            mov r10, 10
+            idiv r10
+            add rdx, 48
+            mov [rbx], dl
+            mov r8, rax
+            add rcx, 1
+            cmp rax, 0
+            jne numberToBufferLoopStart
+
+
+writeBuffer:
             ; write to console from buffer
-            mov rdi, BUFFER ; copy pointer to BUFFER into rdi
-            mov rsi, rax ; copy number of bytes to output to rsi
+            mov rdi, rbx ; copy pointer to BUFFER into rdi
+            mov rsi, rcx ; copy number of bytes to output to rsi
             call _write ; execute system call
 
 ; exit program with exit code 0
