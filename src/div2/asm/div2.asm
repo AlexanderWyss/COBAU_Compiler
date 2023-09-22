@@ -25,7 +25,6 @@ readInput:
             call _read ; read input, length of input in rax
 
 bufferToNumber: ; expects buffer initialized and length in rax
-            sub rax, 1 ; TODO remove \n\r
             mov r9, rax ; mover buffer length to r9
             mov r8, 0 ; init number with zero in r8
             mov rcx, 0 ; init loop counter to rcx
@@ -36,6 +35,10 @@ bufferToNumberLoop: ; r8=number, rcx=index, r9=buffer_length
             sub rax, rcx
             sub rax, 1
             movzx rdx, byte [rax] ; read value of buffer
+            cmp rdx, 48 ; filter non ascii
+            jl shortenLoop
+            cmp rdx, 57 ; filter non ascii
+            jg shortenLoop
             sub rdx, 48 ; convert ascii to number
             cmp rcx, 0 ; if index is 0 10^0
             je bufferToNumberOfTenthPowerLoopEnd
@@ -51,6 +54,10 @@ bufferToNumberOfTenthPowerLoopEnd:
             add rcx, 1; increment index
             cmp rcx, r9
             jl bufferToNumberLoop
+            jmp divide
+shortenLoop:
+    sub r9, 1
+    jmp bufferToNumberLoop
 
 divide:
             mov rax, r8
