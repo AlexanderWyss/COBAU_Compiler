@@ -12,6 +12,12 @@ section .bss ; uninitialized data
     alignb 8 ; align to 8 bytes (for 64-bit machine)
     BUFFER resb LENGTH ; buffer (64 bytes)
 
+Section .data
+  TEXTINPUT: db 'Please enter an integer value:', 13, 10
+  TEXTINPUTLEN: equ $-TEXTINPUT
+  TEXTOUTPUT: db 'The result of value / 2 is: '
+  TEXTOUTPUTLEN: equ $-TEXTOUTPUT
+
 section .text
 
 _start:
@@ -19,7 +25,9 @@ _start:
                                         ; ensure that the stack is aligned for the subsequent
                                         ; function calls. Required for Windows and MacOS.
 readInput:
-; implement divider (milestone 1)
+            mov rdi, TEXTINPUT
+            mov rsi, TEXTINPUTLEN
+            call _write
             mov rdi, BUFFER ; copy pointer to BUFFER into rdi
             mov rsi, LENGTH ; copy length of byte array into rsi
             call _read ; read input, length of input in rax
@@ -107,7 +115,9 @@ numberToBufferAdd:
 
 
 writeBuffer:
-            ; write to console from buffer
+            mov rdi, TEXTOUTPUT
+            mov rsi, TEXTOUTPUTLEN
+            call _write
             mov rdi, rbx ; copy pointer to BUFFER into rdi
             mov rsi, rcx ; copy number of bytes to output to rsi
             call _write ; execute system call
