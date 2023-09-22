@@ -35,6 +35,8 @@ bufferToNumberLoop: ; r8=number, rcx=index, r9=buffer_length
             sub rax, rcx
             sub rax, 1
             movzx rdx, byte [rax] ; read value of buffer
+            cmp rdx, '-'
+            je negateNumber
             cmp rdx, 48 ; filter non ascii
             jl shortenLoop
             cmp rdx, 57 ; filter non ascii
@@ -58,29 +60,50 @@ bufferToNumberOfTenthPowerLoopEnd:
 shortenLoop:
     sub r9, 1
     jmp bufferToNumberLoop
+negateNumber:
+    sub r9, 1
+    neg r8
 
 divide:
+            mov rdx, 0
             mov rax, r8
-            sar rax, 1 ; divide by 2
+            cqo ; sign extend
+            mov r10, 2
+            idiv r10
             mov r8, rax
 
 numberToBuffer: ; r8=number, rbx=buffer begin address
             mov rcx, 0 ; buffer length
             mov rbx, BUFFER
             add rbx, LENGTH
+            mov r12, 0 ; 0 = positive
+            cmp r8, 0
+            jge numberToBufferLoopStart
+            mov r12, 1 ; 1 = negative
 
 numberToBufferLoopStart:
             sub rbx, 1 ; buffer index -1
             mov rdx, 0
             mov rax, r8
+            cqo ; sign extend
             mov r10, 10
             idiv r10
+            cmp r12, 0
+            je numberToBufferAdd
+            neg rdx
+numberToBufferAdd:
             add rdx, 48
             mov [rbx], dl
             mov r8, rax
             add rcx, 1
             cmp rax, 0
             jne numberToBufferLoopStart
+            cmp r12, 0
+            je writeBuffer
+            sub rbx, 1
+            add rcx, 1
+            mov [rbx], byte '-'
+
 
 
 writeBuffer:
