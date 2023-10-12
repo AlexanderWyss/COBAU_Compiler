@@ -1,0 +1,1156 @@
+{
+    "name"                  : "Mini Parser",
+    "commandline"           : "${jvm} -jar ${buildDir}/libs/MiniJCompiler.jar",
+    "description"           : "A set of system tests to verify, whether the compiler is able to perform a syntactic analysis of a miniJ program",
+    "startScore"            : -30,
+    "timeoutMilliseconds"   : 3000,
+    "testCases" : [
+    {
+        "name"             : "Global: int",
+        "input"            : "int number;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Global: boolean",
+        "input"            : "bool isSet;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Global: text",
+        "input"            : "text value;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Global: zwei Variablen",
+        "input"            : "int number;\ntext zeichen;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Global: drei Variablen",
+        "input"            : "int number;\ntext zeichen;\nbool isSet;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Global: kein Symbolname",
+        "input"            : "int;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.65
+    },
+    {
+        "name"             : "Global: mehr als ein Symbolname",
+        "input"            : "int i,j;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.65
+    },
+    {
+        "name"             : "Global: kein Semikolon",
+        "input"            : "wert : int",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.7
+    },
+    {
+        "name"             : "Funktion: keine Parameter",
+        "input"            : "void myName() {\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktion: ein Parameter",
+        "input"            : "void name(int param1) {\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktion: zwei Parameter",
+        "input"            : "void name(int param1, int p2) {\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktion: drei Parameter",
+        "input"            : "void name(int param1, bool p2, text TEXT) {\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktion: kein Name",
+        "input"            : "void () {\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: keine Parameterliste",
+        "input"            : "void myName {\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: keine Klammerung",
+        "input"            : "void name(int param1)",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: falsche Klammerung",
+        "input"            : "void name(int param1) {",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: falsche Klammerung",
+        "input"            : "void name(int param1)\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: falscher Parameter (1)",
+        "input"            : "void name(int) {\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: falscher Parameter (2)",
+        "input"            : "void name(bla)\n{\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktion: falsche Parameter an zweiter Stelle",
+        "input"            : "void name(int a, bla) {\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Local: int",
+        "input"            : "int number;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Local: bool",
+        "input"            : "void func() {\n    bool isSet;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Local: text",
+        "input"            : "void func() {\n    text value;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Local: zwei Variablen",
+        "input"            : "void func() {\n    int number;\n    text zeichen;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Local: drei Variablen",
+        "input"            : "void func() {\n    int number;\n    text zeichen;\n    bool isSet;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Local: kein Symbolname",
+        "input"            : "void func() {\n    int;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.65
+    },
+    {
+        "name"             : "Local: mehr als ein Symbolname",
+        "input"            : "void func() {\n    int i,j;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.65
+    },
+    {
+        "name"             : "Local: kein Semikolon",
+        "input"            : "void func() {\n    wert : int\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.7
+    },
+    {
+        "name"             : "Zuweisung: Integerkonstanten",
+        "input"            : "void func() {\n    int i;\n    i = 0;\n    i = 424242;\n    i = +424242;\n    i = -424242;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: Stringkonstanten",
+        "input"            : "void func() {\n    text s1;\n    text s2;\n    s1 = \"\";\n    s2 = \"Hallo Welt!\";\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: Booleankonstanten",
+        "input"            : "void func() {\n    bool a;\n    bool b;\n    a = false;\n    b = true;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: ungültige Integerkonstante",
+        "input"            : "void func() {\n    int i;\n    i = +123a;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: rechte Seite fehlt",
+        "input"            : "void func() {\n    int i;\n    i = ;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: fehlerhafte Stringkonstante (1)",
+        "input"            : "void func() {\n    text s;\n    s = \"abc;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: fehlerhafte Stringkonstante (2)",
+        "input"            : "void func() {\n    text s;\n    s = abc\";\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Zuweisung: mittels ==",
+        "input"            : "void func() {\n    text s;\n    s == \"abc\";\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Funktionsaufruf: ohne Parameter",
+        "input"            : "void funcB() { }\nvoid funcA() {\n    funcB();\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktionsaufruf: ein Parameter",
+        "input"            : "void funcB(int a) { }\nvoid funcA() {\n    funcB(42);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktionsaufruf: zwei Parameter",
+        "input"            : "void funcB(int a, int b) { }\nvoid funcA() {\n    funcB(13, 42);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktionsaufruf: drei Parameter",
+        "input"            : "void funcB(int a, int b, int c) { }\nvoid funcA() {\n    funcB(13, 25, 42);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Funktionsaufruf: keine Parameterliste ",
+        "input"            : "void funcB() { }\nvoid funcA() {\n    funcB;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Funktionsaufruf: falsche Parameterliste (1)",
+        "input"            : "void funcB(int a) { }\nvoid funcA() {\n    callStatement(42;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Funktionsaufruf: falsche Parameterliste (2)",
+        "input"            : "void funcB(int a) { }\nvoid funcA() {\n    callStatement 42);\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Funktionsaufruf: falsche Parameterliste (3)",
+        "input"            : "void funcB(int a) { }\nvoid funcA() {\n    callStatement(;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Funktionsaufruf: falsche Parameterliste (4)",
+        "input"            : "void funcB(int a, int b) { }\nvoid funcA() {\n    funcB(13 42);\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Return: ohne Expression",
+        "input"            : "void func() {\n    return;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 1.0
+    },
+    {
+        "name"             : "Return: mit Konstante",
+        "input"            : "int func() {\n    return 42;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 1.0
+    },
+    {
+        "name"             : "Return: falsches Schlüsselwort",
+        "input"            : "void func() {\n    rtrn;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 1.0
+    },
+    {
+        "name"             : "Return: falsches Schlüsselwort mit Konstante",
+        "input"            : "void func() {\n    rtrn 42;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 1.0
+    },
+    {
+        "name"             : "Ausdruck: mathematische Operatoren (Binär)",
+        "input"            : "void func(int i) {\n    int a;\n    a = 2 + i;\n    a = 2 - 1;\n    a = 2 * 1;\n    a = i / 2;\n    a = i % 2;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Ausdruck: rechter Operand fehlt (math.)",
+        "input"            : "void func() {\n    int a;\n    a = 2 +\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: linker Operand fehlt (math.)",
+        "input"            : "void func() {\n    int a;\n    a = * -1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Vergleiche",
+        "input"            : "void func(int a, int b) {\n    bool x;\n    x = b < a;\n    x = b > a;\n    x = b <= a;\n    x = b >= a;\n    x = b == a;\n    x = b != a;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: rechter Operand fehlt (Vergleich)",
+        "input"            : "void func() {\n    int a;\n    a = 2 <;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: linker Operand fehlt (Vergleich)",
+        "input"            : "void func() {\n    int a;\n    a = < -2000;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Binär (Logik)",
+        "input"            : "void func(int a, int b) {\n    bool x;\n    x = b < a || b > a;\n    x = b < a && b > a;\n    x = !(b < a);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: rechter Operand fehlt (Logik)",
+        "input"            : "void func() {\n    int a;\n    a = 2 !=;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: linker Operand fehlt (Logik)",
+        "input"            : "void func() {\n    int a;\n    a =  == 2;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Klammern",
+        "input"            : "void func(int i) {\n    int a;\n    a = (2 + i);\n    a = ((2 + i));\n    a = (((2 + i)));\n    a = (2 + i) + (2 - i);\n    a = ((2 + i) + (2 - i));\n    a = ((2 + i)) + ((2 - i));\n    a = (((2 + i)) + ((2 - i)));\n    a = (((2 + i))) + (((2 - i)));\n    a = -(5 + 1);\n    a = -(5 + 1) + (2 + i) + (2 - i);\n    a = -((5 + 1) + (2 + i) + (2 - i));\n    a = -((5 + 1)) + ((2 + i)) + ((2 - i));\n    a = -(((5 + 1)) + ((2 + i)) + ((2 - i)));\n    a = -(((5 + 1))) + (((2 + i))) + (((2 - i)));\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Falsche Klammerung 1",
+        "input"            : "void func() {\n    int a;\n    a = (2 + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Falsche Klammerung 2",
+        "input"            : "void func() {\n    int a;\n    a = (2 + 1));\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Falsche Klammerung 3",
+        "input"            : "void func() {\n    int a;\n    a = ((2 + 1);\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Unär",
+        "input"            : "void func(int i) {\n    int a;\n    bool b;\n    a = -a;\n    b = !b;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Unär ohne Semikolon",
+        "input"            : "void func(int i) {\n    int a;\n    a = -a\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Unär ohne Operator",
+        "input"            : "void func(int i) {\n    bool b;\n    b = !;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Pre-increment und Pre-decrement",
+        "input"            : "void func(int i) {\n    int a;\n    int x;\n    x = ++a;\n    x = --a;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Post-increment und Post-decrement",
+        "input"            : "void func(int i) {\n    int a;\n    int x;\n    x = a++;\n    x = a--;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Pre-increment und Pre-decrement geben eine Speicherstelle zurück",
+        "input"            : "void func(int i) {\n    int a;\n    int x;\n    x = ++++a;\n    x = ----a;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Post-increment und Post-decrement geben einen Wert zurück",
+        "input"            : "void func(int i) {\n    int a;\n    bool x;\n    x = a++++;\n    y = a----;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Increment und Decrement kombiniert mit Addition",
+        "input"            : "void func() {\n    int a;\n    int b;\n    int x;\n    x = a++ + b++;\n    x = ++a + ++b;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Increment und Decrement mit fehlendem zweiten Operanden",
+        "input"            : "void func() {\n    int a;\n    int b;\n    int x;\n    x = a++ +;\n    x = b-- -;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf mit Expressions",
+        "input"            : "void call1() { }\nvoid call2(int a) { }\nvoid call3(bool a, int b) { }\nvoid call4(text a, int b, int c) { }\nvoid func(int a, int b) {\n    call1();\n    call2(a + b);\n    call3(a > b, b - a);\n    call4(\"Test\", b++, a);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf mit Expressions (Fehlerhaft 1)",
+        "input"            : "void call1(int a) { }\nvoid func(int a, int b) {\n    call1((a + b);\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf mit Expressions (Fehlerhaft 2)",
+        "input"            : "void call1(int a) { }\nvoid func(int a, int b) {\n    call1(a + b;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf mit Expressions (Fehlerhaft 3)",
+        "input"            : "void call1(int a) { }\nvoid func(int a, int b) {\n    call1((a + b), (a - b);\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Return mit Expression",
+        "input"            : "int func() {\n    int a;\n    return a * a;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Return mit komplexer Expression",
+        "input"            : "int func() {\n    int a;\n    a = 1;\n    return ((a + a) * (a / a));\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Return mit fehlendem Operand",
+        "input"            : "int func() {\n    int a;\n    return a *;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Return mit fehlender schliessender Klammer",
+        "input"            : "int func() {\n    int a;\n    a = 1;\n    return (;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf (keine Parameter)",
+        "input"            : "int funcB() {\n    return 1;\n}\nvoid funcA() {\n    int a;\n    a = funcB() * funcB();\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: Funktionsaufruf (ein Parameter)",
+        "input"            : "int square(int a) {\n    return a * a;\n}\nvoid funcA() {\n    int a;\n    int b;\n    b = 5;\n    a = square(4 * b);\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Ausdruck: fehlende Klammer (keine Parameter)",
+        "input"            : "int funcB() {\n    return 1;\n}\nvoid funcA() {\n    int a;\n    a = funcB() * funcB(;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "Ausdruck: falsches Komma (ein Parameter)",
+        "input"            : "void square(int a) {\n    return a * a;\n}\nvoid funcA() {\n    int a;\n    int b;\n    b = 5;\n    a = square(4 * b, );\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.15
+    },
+    {
+        "name"             : "If: ohne else",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "If: mit else",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n    } else {\n        return;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "If: mit else if",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n    } else if (i > 1) {\n        return;\n    } else {\n        return;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "If: fehlendes schliessendes Semikolon",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: fehlendes öffnendes Semikolon",
+        "input"            : "void test(int i) {\n    if (i == 1)\n        return;\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: fehlendes schliessendes Semikolon",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n    } else if (i > 1)\n        return;\n    } else\n        return;\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: fehlendes öffnendes Semikolon",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        return;\n    } else if (i > 1) {\n        return;\n     else {\n        return;\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: doppelt verschachtelt",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        i = i + 1;\n    } else if (i > 1) {\n        if (i < 100) {\n            i = i + 2;\n        } else {\n            i = i + 3;\n        }\n    } else {\n        if (i < -100) {\n            i = i + 4;\n        } else if(i > -50) {\n            i = i + 5;\n        }\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "If: schliessendes Semikolon fehlt (doppelt verschachtelt)",
+        "input"            : "void test(int i) {\n    if (i == 1) {\n        i = i + 1;\n    else if (i > 1) {\n        if (i < 100) {\n            i = i + 2;\n        else\n            i = i + 3;\n        }\n    } else {\n        if (i < -100) {\n            i = i + 4;\n        else if(i > -50) {\n            i = i + 5;\n        }\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: dreifach verschachtelt",
+        "input"            : "void test(int i) {\n    if (i > 0) {\n        if (i > 1) {\n            if (i > 2) {\n               i = i + 1;\n            }\n        }\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "If: Semikolon fehlt (dreifach verschachtelt)",
+        "input"            : "void test(int i) {\n    if (i > 0) {\n        if (i > 1) {\n            if (i > 2) {\n               i = i + 1;\n            }\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.28
+    },
+    {
+        "name"             : "If: Klammern fehlen (dreifach verschachtelt)",
+        "input"            : "void test(int i) {\n    if i > 0 {\n        if i > 1 {\n            if i > 2 {\n               i = i + 1;\n            }\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.34
+    },
+    {
+        "name"             : "While: mit Statement",
+        "input"            : "void stmt1() { }\nvoid myWhile() {\n    int x;\n    while(x > 1) {\n        x = x - 1;\n        stmt1();\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "While: ohne öffnende Klammer",
+        "input"            : "void stmt1() { }\nvoid myWhile()\n    int x;\n    while (x > 1)\n        x = x - 1;\n        stmt1();\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.66
+    },
+    {
+        "name"             : "While: ohne schliessende Klammer",
+        "input"            : "void stmt1() { }\nvoid myWhile() {\n    int x;\n    while (x > 1) {\n        x = x - 1;\n        stmt1();\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.66
+    },
+    {
+        "name"             : "While: ohne Semikolon",
+        "input"            : "void stmt1() { }\nvoid myWhile() {\n    int x;\n    while (x > 1) {\n        x = x - 1;\n        stmt1()\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.67
+    },
+    {
+        "name"             : "While: zwei Statements",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid myWhile() {\n    int x;\n    while(x > 1) {\n        stmt1();\n        stmt2();\n        x = x - 1;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "While: drei Statements",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid stmt3() { }\nvoid myWhile() {\n    int x;\n    while(x > 1) {\n        stmt1();\n        stmt2();\n        stmt3();\n        x = x - 1;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "While: verschachtelt mit If",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid complex(int x) {\n    int i;\n    while(x > 1) {\n        if (x > 2) {\n            stmt1();\n            i = i + 1;\n        } else if (x < 2) {\n            while (x < 10) {\n                 stmt2();\n                 i = i * (i / 2);\n            }\n        }\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Kommentar: korrekter Zeilenkommentar (1)",
+        "input"            : "// Basic comment",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Kommentar: korrekter Zeilenkommentar (2)",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid myIf(int x) {\n    if(x > 1) {\n       // my comment\n        stmt1();\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Kommentar: korrekter Zeilenkommentar (3)",
+        "input"            : "///Basic comment",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Kommentar: Fehler im Zeilenkommentar (1)",
+        "input"            : "/Falscher Kommentar",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Kommentar: Fehler im Zeilenkommentar (2)",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid myIf(int x) {\n    if(x > 1) {\n        stmt1();\n        /Falscher Kommentar\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Kommentar: korrekter Blockkommentar (1)",
+        "input"            : "int bla1;\n/* Bla */\nint bla2;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Kommentar: korrekter Blockkommentar (2)",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid myIf(int x) {\n    if(x > 1) {\n        stmt1();\n        /*Mein\n          mehrzeiliger\n          Kommentar\n        */\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "Kommentar: Fehler im Blockkommentar (3)",
+        "input"            : "int bla;\n/* Bla\nint bla;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Kommentar: Fehler im Blockkommentar (3)",
+        "input"            : "void stmt1() { }\nvoid stmt2() { }\nvoid myIf(int x) {\n    if(x > 1) {\n        stmt1();\n        /*Mein\n          mehrzeiliger\n          Kommentar\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Bezeichner: gültig",
+        "input"            : "int v;\nint V;\nint valid;\nint ValidIdentifier;\nint valid1;\nint valid1BIG;\nint valid$_BIG_$;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 2.0
+    },
+    {
+        "name"             : "Bezeichner: ungültiger Bezeichner (1)",
+        "input"            : "int 1bla;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Bezeichner: ungültiger Bezeichner (2)",
+        "input"            : "int abc!;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Bezeichner: ungültiger Bezeichner (3)",
+        "input"            : "int *abc;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Bezeichner: ungültiger Bezeichner (3)",
+        "input"            : "ab#int c;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Semikolon: nach Funktionsdefinition",
+        "input"            : "void func() {\n};",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.66
+    },
+    {
+        "name"             : "Semikolon: Nach Else",
+        "input"            : "int func(int a) {\n   if (a > 0) {\n        return 1;\n   } else {\n        return 0;\n   };\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.67
+    },
+    {
+        "name"             : "Semikolon: Nach While",
+        "input"            : "void func(int a) {\n   while (a > 10) {\n        a = a - 1;\n   };\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.67
+    },
+    {
+        "name"             : "Semikolon: Semikolon statt schliessender Klammer",
+        "input"            : "void func() {\n;",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 2.0
+    },
+    {
+        "name"             : "Block: Verschachtelter Block",
+        "input"            : "void func() {\n    int a;\n    {\n        a = 1;\n        a = a + 1;\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Block: If ohne Klammerung",
+        "input"            : "int func(int a) {\n    if (a > 0) return 1; else return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Block: While ohne Klammerung",
+        "input"            : "void func(int a) {\n    while (a > 0) a = a - 1;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.34
+    },
+    {
+        "name"             : "Block: Variablendeklaration in Block (nicht erlaubt)",
+        "input"            : "void func() {\n    int a;\n    a = 1;\n    {\n        int b;\n        b = 2;\n        a = a + b;\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Block: fehlende schliessende Klammer bei verschachteltem Block",
+        "input"            : "void func() {\n    int a;\n    {\n        a = 1;\n        a = a + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Block: fehlende schliessende Klammer bei if",
+        "input"            : "void func(int a) {\n    if (a > 0) { return 1; else return 0;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Record: Definition",
+        "input"            : "record test {\n   int f1;\n}\ntest myRecord;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: ein Feld",
+        "input"            : "record scalar {\n  int myValue;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: leer",
+        "input"            : "record leer {\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: zwei Felder",
+        "input"            : "record meinRecord {\n  int xCoord;\n  int yCoord;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: drei Felder",
+        "input"            : "record x {\n  int xCoord;\n  bool isSet;\n  text s;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: definition und Globale Variable",
+        "input"            : "record x {\n  int xCoord;\n}\nx myRecord;",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: falsches Schlüsselwort",
+        "input"            : "rcrd meinRecord42 {\n  int xCoord;\n  int yCoord;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: Feldname fehlt",
+        "input"            : "record meinRecord42 {\n  int;\n  int yCoord;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: verschachtelte Funktion",
+        "input"            : "record meinRecord {\n  int xCoord;\n  void bla() {}\n  int yCoord;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: Felddefinition inkorrekt",
+        "input"            : "record meinRecord42 {\n  int name,name;\n  int yCoord;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: Zugriff",
+        "input"            : "record test {\n    int value1;\n    int value2;\n}\nvoid fields() {\n   test myTest;\n   int i;\n   myTest.value1 = 1 + 1;\n   i = myTest.value2 * myTest.value1;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: Feldname fehlt (linke Seite)",
+        "input"            : "record test {\n    int value1;\n    int value2;\n}\nvoid fields() {\n   test myTest;\n   myTest. = 1 + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: Feldname fehlt (rechte Seite)",
+        "input"            : "record test {\n    int value1;\n    int value2;\n}\nvoid fields() {\n   test myTest;\n   int i;\n   i = myTest. + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: verschachtelter Zugriff",
+        "input"            : "record test {\n    int value1;\n    int value2;\n}\nrecord test2 {\n    test val;\n}\nvoid fields() {\n   test2 myTest;\n   int i;\n   myTest.val.value1 = 1 + 1;\n   i = myTest.val.value2 * myTest.val.value1;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: falsche Verschachtelung",
+        "input"            : "record test {\n    int value1;\n    int value2;\n}\nrecord test2 {\n    test val;\n}\nvoid fields() {\n    test2 myTest;\n    int i;\n    myTest.val. = 1 + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Record: als Parameter und Local",
+        "input"            : "record myRecord {\n  int f1;\n}\nvoid name(myRecord param) {\n    myRecord local;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Array: Zugriff (eindimensional)",
+        "input"            : "bool[] values;\nvoid fields() {\n    bool result;\n    values[0] = true;\n    values[1] = false;\n    result = values[0] && values[1];\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Array: Fehlende schliessende Klammer (eindimensional)",
+        "input"            : "void fields() {\n    bool[] values;\n    bool result;\n    values[0] = true;\n    values[1 = false;\n    result = values[0] && values[1];\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Array: Fehlende öffnende Klammer (eindimensional)",
+        "input"            : "void fields() {\n    bool[] values;\n    bool result;\n    values[0] = true;\n    values[1] = false;\n    result = values0] && values[1];\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Array: Zugriff (zweidimensional)",
+        "input"            : "void fields() {\n    int[][] values;\n    int i;\n    values[0][0] = 1;\n    values[1][1] = 2;\n    i = values[0][0] + values[1][1];\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Array: Zugriff (mehrdimensional)",
+        "input"            : "void fields() {\n    int[][][] values;\n    int i;\n    values[0][0][2] = 1;\n    values[1][1][3] = 2;\n    i = values[0][0][2] * values[1][1][3];\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Array: Index fehlt (mehrdimensional)",
+        "input"            : "void fields() {\n    int[][][] values;\n    int i;\n    values[0][][2] = 1;\n    values[1][1][3] = 2;\n    i = values[0][0][2] * values[1][1][3];\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Array: Zugriff (Recordvariante)",
+        "input"            : "record test {\n  int[] f1;\n  int[] f2;\n}\ntest values;\nvoid fields() {\n   int i;\n   values.f1[0] = 1;\n   values.f2[1] = 2;\n   i = values.f1[0] + values.f2[1];\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Array: Index fehlt (Recordvariante)",
+        "input"            : "record test {\n  int[] f1;\n  int[] f2;\n}\ntest[] values;\nvoid func() {\n   int i;\n   values[0].f1 = 1;\n   values[].f2 = 2;\n   i = values[0].f1 + values[0].f2;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Array: Als Parameter und Local",
+        "input"            : "void func(int[] param) {\n    int[] local;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "Referenz: Ein Parameter",
+        "input"            : "void func(int& abc) {\n    abc = 1;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Referenz: Zwei Parameter",
+        "input"            : "void func(int& abc, text& xyz) {\n    abc = 1;\n    xyz = \"abc\";\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "Referenz: Fehlender Typ und Bezeichner",
+        "input"            : "void func(& ) {\n    abc = 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Referenz: Fehler im Schlüsselwort",
+        "input"            : "void func(&er int abc) {\n    abc = 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.33
+    },
+    {
+        "name"             : "Referenz: Fehlendes Komma",
+        "input"            : "void func(int& abc text& xyz) {\n    abc = 1;\n    xyz = \"abc\";\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.34
+    },
+    {
+        "name"             : "Komplex: Kombinationen",
+        "input"            : "int j;\nrecord myRecord {\n    int field1;\n    text field2;\n    bool field3;\n}\nvoid stmt1() { }\nvoid stmt2() { }\nvoid myWhile() {\n    int x;\n    while(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: Weitere Kombinationen",
+        "input"            : "int global1;\nint global2;\nvoid stmt1() { }\nvoid stmt2() { }\nvoid myWhile(int x) {\n    while(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}\nrecord myRecord {\n    int field1;\n    text field2;\n    bool field3;\n}\nrecord myRecord2 {\n    int field1;\n    text field2;\n    myRecord field3;\n}\nvoid myIf(int x) {\n    if(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: GCD",
+        "input"            : "void gcd(int n1, int n2) {\n    while (n1 != n2) {\n        if (n1 > n2) {\n            n1 = n1 - n2;\n        } else {\n            n2 = n2 - n1;\n        }\n    }\n    writeInt(n2);\n}\nint main() {\n  gcd(60, 50);\n  return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: QuickSort",
+        "input"            : "void quickSort(int[]& arr, int from, int to) {\n    int partitionIndex;\n     if (from < to) {\n        partition(arr, partitionIndex, from, to);\n        quickSort(arr, from, partitionIndex - 1);\n        quickSort(arr, partitionIndex + 1, to);\n     }\n}\nvoid partition(int[]& arr, int& partitionIndex, int from, int to) {\n    int pivot;\n    int i;\n    int j;\n    int swapTemp;\n    pivot = arr[to];\n    i = from - 1;\n    j = from;\n    while (j < to) {\n        if (arr[j] <= pivot) {\n            i = i + 1;\n            swapTemp = arr[i];\n            arr[i] = arr[j];\n            arr[j] = swapTemp;\n        }\n        j = j + 1;\n    }\n    swapTemp = arr[i + 1];\n    arr[i + 1] = arr[to];\n    arr[to] = swapTemp;\n    partitionIndex = i + 1;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: Kombinationen (mit Fehler)",
+        "input"            : "int j;\nrecord myRecord {\n    int field1;\n    text field2;\n    bool field3\n}\nvoid stmt1() { }\nvoid stmt2() { }\nvoid myWhile() {\n    int x;\n    while(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: Weitere Kombinationen (mit Fehler)",
+        "input"            : "int global1;\nint global2;\nvoid stmt1() { }\nvoid stmt2() { }\nvoid myWhile(int x) {\n    while(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}\nrecord myRecord {\n    int field1;\n    text field2;\n    bool field3;\n}\nrecord myRecord2 {\n    int field1;\n    text field2;\n    myRecord field3;\n}\nvoid myIf(int ) {\n    if(x > 1) {\n        stmt1();\n        stmt2();\n    }\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: GCD (mit Fehler)",
+        "input"            : "void gcd(int n1, int n2) {\n    while (n1 ! n2) {\n        if (n1 > n2) {\n            n1 = n1 - n2;\n        } else {\n            n2 = n2 - n1;\n        }\n    }\n    writeInt(n2);\n}\nint main() {\n  gcd(60, 50);\n  return 0;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "Komplex: QuickSort (mit Fehler)",
+        "input"            : "void quickSort(int[]& arr, int from, int to) {\n    int partitionIndex;\n     if (from < to) {\n        partition(arr, partitionIndex, from, to);\n        quickSort(arr, from, partitionIndex - 1);\n        quickSort(arr, partitionIndex + 1, to);\n     }\n}\nvoid partition(int[]& arr, int& partitionIndex, int from, int to) {\n    int pivot;\n    int i;\n    int j;\n    int swapTemp;\n    pivot = arr[to;\n    i = from - 1;\n    j = from;\n    while (j < to) {\n        if (arr[j] <= pivot) {\n            i = i + 1;\n            swapTemp = arr[i];\n            arr[i] = arr[j];\n            arr[j] = swapTemp;\n        }\n        j = j + 1;\n    }\n    swapTemp = arr[i + 1];\n    arr[i + 1] = arr[to];\n    arr[to] = swapTemp;\n    partitionIndex = i + 1;\n}",
+        "expectedExitCode" : "1",
+        "expectedOutput"   : "",
+        "score"            : 0.25
+    }  ]
+}
