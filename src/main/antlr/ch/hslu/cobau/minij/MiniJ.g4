@@ -6,7 +6,7 @@ package ch.hslu.cobau.minij;
 
 // milestone 2: parser
 
-unit : (function | statement)+ EOF; // empty rule to make project compile
+unit : (function | statement)* EOF; // empty rule to make project compile
 statement: (assignement | declaration | function_call) DELIMITER;
 declaration: datatype IDENTIFIER;
 assignement: IDENTIFIER '=' (value | operation);
@@ -16,7 +16,8 @@ parameter_declaration: datatype PARAMETER_BY_REFERENCE? IDENTIFIER;
 if_statement: (IF '(' operation ')' program_block) else_if_statement* else_statement?;
 else_if_statement: ELSE IF '(' operation ')' program_block;
 else_statement: ELSE program_block;
-program_block: '{' ( statement | if_statement)* (RETURN (usable_value)? DELIMITER)?'}';
+while_loop: WHILE '(' operation ')' program_block;
+program_block: '{' ( statement | if_statement | while_loop | program_block)* (RETURN (usable_value)? DELIMITER)?'}';
 function_call: IDENTIFIER '(' (usable_value? |  (usable_value (',' usable_value)+)) ')';
 usable_value: IDENTIFIER | value | operation | function_call;
 value: NUMBER | STRING | BOOL_VALUE;
@@ -35,6 +36,7 @@ operation: '(' operation ')'
 RETURN: 'return';
 IF: 'if';
 ELSE: 'else';
+WHILE: 'while';
 DELIMITER: ';';
 TIMES: '*';
 DIVIDE: '/';
@@ -61,4 +63,7 @@ NUMBER: ('-' | '+')? DIGIT+;
 IDENTIFIER: LETTER (LETTER | DIGIT)*;
 DIGIT: [0-9];
 LETTER: [a-zA-Z_$];
+COMMENT: ('//' .*? NL) -> skip;
+MULTI_LINE_COMMENT: ('/*' .*? '*/') -> skip;
 WHITESPACE: [ \n\r\t]+ -> skip;
+NL: '\r'? '\n' | '\r' | EOF;
