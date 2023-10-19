@@ -6,10 +6,10 @@ package ch.hslu.cobau.minij;
 
 // milestone 2: parser
 
-unit : (function | statement | declaration)* EOF; // empty rule to make project compile
+unit : (function | statement | declaration | record_declaration)* EOF;
 statement: (assignement | function_call) DELIMITER;
 declaration: datatype IDENTIFIER DELIMITER;
-assignement: IDENTIFIER '=' (value | operation);
+assignement: identifier_or_record_access '=' usable_value;
 function: return_type IDENTIFIER '(' (parameter_declaration? |  (parameter_declaration (',' parameter_declaration)+))')' function_program_block;
 return_type: datatype | 'void';
 parameter_declaration: datatype PARAMETER_BY_REFERENCE? IDENTIFIER;
@@ -21,22 +21,26 @@ function_program_block: '{' ( statement | declaration | if_statement | while_loo
 program_block: ('{' ( statement | if_statement | while_loop | program_block)* return_statement?'}' DELIMITER?);
 single_line_program_block: statement | return_statement;
 return_statement: RETURN (usable_value)? DELIMITER;
+record_declaration: RECORD IDENTIFIER record_block;
+record_block: '{' declaration* '}' DELIMITER?;
+identifier_or_record_access: IDENTIFIER '.' identifier_or_record_access | IDENTIFIER;
 function_call: IDENTIFIER '(' (usable_value? |  (usable_value (',' usable_value)+)) ')';
-usable_value: IDENTIFIER | value | operation | function_call;
+usable_value: identifier_or_record_access | value | operation | function_call;
 value: NUMBER | STRING | BOOL_VALUE;
-datatype: SIMPLE_DATATYPE | ARRAY_DATATYPE;
+datatype: SIMPLE_DATATYPE | ARRAY_DATATYPE | IDENTIFIER;
 operation: '(' operation ')'
             | (MINUS | BOOL_NEGATE | INCREMENT | DECREMENT) operation
-            | IDENTIFIER (INCREMENT | DECREMENT)
+            | identifier_or_record_access (INCREMENT | DECREMENT)
             | operation (TIMES | DIVIDE | MODULO) operation
             | operation (MINUS | PLUS) operation
             | operation (LESS_THAN | LEQ_THAN | GREATER_THEN | GEQ_THAN) operation
             | operation (EQUAL_TO | NEQ_TO) operation
             | operation BOOL_AND operation
             | operation BOOL_OR operation
-            | (BOOL_VALUE | NUMBER | IDENTIFIER | function_call);
+            | (BOOL_VALUE | NUMBER | identifier_or_record_access | function_call);
 
 RETURN: 'return';
+RECORD: 'record';
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
