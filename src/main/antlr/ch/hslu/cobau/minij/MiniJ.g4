@@ -6,6 +6,8 @@ package ch.hslu.cobau.minij;
 
 // milestone 2: parser
 
+// TODO rename shit, so the parse tree is easyer to understand
+
 unit : (function | statement | declaration | record_declaration)* EOF;
 statement: (assignement | function_call) DELIMITER;
 declaration: datatype IDENTIFIER DELIMITER;
