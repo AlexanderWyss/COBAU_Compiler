@@ -1,78 +1,148 @@
+/**
+ * Reference grammar for language "MiniJ HS23"
+ *
+ * Copyright (c) 2020-2023 HSLU Informatik. All rights reserved.
+ * This code and any derivative work thereof must remain private.
+ * Public distribution is prohibited.
+ */
 grammar MiniJ;
 
 @header {
 package ch.hslu.cobau.minij;
 }
 
-// milestone 2: parser
+///////////////////////////////////////////////////////////////////////////////
+// Parsing rules
+///////////////////////////////////////////////////////////////////////////////
 
-// TODO rename shit, so the parse tree is easyer to understand
+// declaractions
+unit        : member* EOF;
+member      : declaration | record | function | SEMICOLON;
 
-unit : (function | statement | declaration | record_declaration)* EOF;
-statement: (assignement | function_call) DELIMITER;
-declaration: datatype IDENTIFIER DELIMITER;
-assignement: variable_accessor '=' usable_value;
-function: return_type IDENTIFIER '(' (parameter_declaration? |  (parameter_declaration (',' parameter_declaration)+))')' function_program_block;
-return_type: datatype | 'void';
-parameter_declaration: datatype PARAMETER_BY_REFERENCE? IDENTIFIER;
-if_statement: (IF '(' operation ')' (program_block | single_line_program_block)) else_if_statement* else_statement?;
-else_if_statement: ELSE IF '(' operation ')' (program_block | single_line_program_block);
-else_statement: ELSE (program_block | single_line_program_block);
-while_loop: WHILE '(' operation ')' (program_block | single_line_program_block);
-function_program_block: '{' ( statement | declaration | if_statement | while_loop | program_block)* return_statement?'}' DELIMITER?;
-program_block: ('{' ( statement | if_statement | while_loop | program_block)* return_statement?'}' DELIMITER?);
-single_line_program_block: statement | return_statement;
-return_statement: RETURN (usable_value)? DELIMITER;
-record_declaration: RECORD IDENTIFIER record_block;
-record_block: '{' declaration* '}' DELIMITER?;
-variable_accessor: variable_accessor '.' variable_accessor | variable_accessor '[' usable_value ']' | IDENTIFIER;
-function_call: IDENTIFIER '(' (usable_value? |  (usable_value (',' usable_value)+)) ')';
-usable_value: variable_accessor | value | operation | function_call;
-value: NUMBER | STRING | BOOL_VALUE;
-datatype: SIMPLE_DATATYPE | ARRAY_DATATYPE | IDENTIFIER;
-operation: '(' operation ')'
-            | (MINUS | BOOL_NEGATE | INCREMENT | DECREMENT) operation
-            | variable_accessor (INCREMENT | DECREMENT)
-            | operation (TIMES | DIVIDE | MODULO) operation
-            | operation (MINUS | PLUS) operation
-            | operation (LESS_THAN | LEQ_THAN | GREATER_THEN | GEQ_THAN) operation
-            | operation (EQUAL_TO | NEQ_TO) operation
-            | operation BOOL_AND operation
-            | operation BOOL_OR operation
-            | (BOOL_VALUE | NUMBER | variable_accessor | function_call);
+record      : RECORD identifier LBRACE (declaration)* RBRACE;
 
-RETURN: 'return';
-RECORD: 'record';
-IF: 'if';
-ELSE: 'else';
-WHILE: 'while';
-DELIMITER: ';';
-TIMES: '*';
-DIVIDE: '/';
-MODULO: '%';
-INCREMENT: '++';
-DECREMENT: '--';
-PLUS: '+';
-MINUS: '-';
-BOOL_NEGATE: '!';
-BOOL_AND: '&&';
-BOOL_OR: '||';
-LESS_THAN: '<';
-LEQ_THAN: '<=';
-GREATER_THEN: '>';
-GEQ_THAN: '>=';
-EQUAL_TO: '==';
-NEQ_TO: '!=';
-PARAMETER_BY_REFERENCE: '&';
-ARRAY_DATATYPE: SIMPLE_DATATYPE '[]'+;
-SIMPLE_DATATYPE: 'int' | 'bool' | 'text';
-BOOL_VALUE: 'true' | 'false';
-STRING: '"' .*? '"';
-NUMBER: ('-' | '+')? DIGIT+;
-IDENTIFIER: LETTER (LETTER | DIGIT)*;
-DIGIT: [0-9];
-LETTER: [a-zA-Z_$];
-COMMENT: ('//' .*? NL) -> skip;
-MULTI_LINE_COMMENT: ('/*' .*? '*/') -> skip;
-WHITESPACE: [ \n\r\t]+ -> skip;
-NL: '\r'? '\n' | '\r' | EOF;
+// procedures and blocks
+function      : (VOID | type) identifier LPAREN (parameter (COMMA parameter)*)? RPAREN declarations functionBody;
+parameter     : type (REF)? identifier  ;
+declarations  : (declarationStatement)*;
+
+functionBody  : LBRACE (declarationStatement)* (statement)* RBRACE;
+block         : LBRACE (statement)* RBRACE;
+
+// statements
+declarationStatement : declaration | SEMICOLON;
+statement            : assignment | callStatement | returnStatement | ifStatement | whileStatement | block | SEMICOLON;
+
+assignment           : memoryAccess ASSIGN expression SEMICOLON;
+callStatement        : call SEMICOLON;
+whileStatement       : WHILE LPAREN expression RPAREN statement;
+ifStatement          : IF LPAREN expression RPAREN statement (elseClause)?;
+elseClause           : ELSE statement;
+returnStatement      : RETURN (expression)? SEMICOLON;
+
+// expressions
+// NOTE: The order of the following subrules is important. In ANTLR order reflects the associativity
+//       of the operations. Thus, operator with highest precendence MUST be listed first.
+expression : LPAREN expression RPAREN
+           | memoryAccess (INCREMENT | DECREMENT)
+           | unaryExpression
+           | expression binaryOp=(TIMES | DIV | MOD) expression
+           | expression binaryOp=(PLUS | MINUS) expression
+           | expression binaryOp=(LESSER | GREATER | LESSER_EQ | GREATER_EQ) expression
+           | expression binaryOp=(EQUAL | UNEQUAL) expression
+           | expression binaryOp=AND expression
+           | expression binaryOp=OR expression
+           | call
+           | trueConstant
+           | falseConstant
+           | integerConstant
+           | stringConstant
+           | memoryAccess
+           ;
+
+call       : identifier LPAREN (expression (COMMA expression)*)? RPAREN;
+
+unaryExpression : unaryOp=(NOT | MINUS | PLUS | INCREMENT | DECREMENT) expression;
+trueConstant    : TRUE;
+falseConstant   : FALSE;
+integerConstant : INTEGER;
+stringConstant  : STRINGCONSTANT;
+memoryAccess    : ID
+                | memoryAccess DOT ID
+                | memoryAccess LBRACKET expression RBRACKET
+                ;
+
+// types and identifier
+declaration   : type identifier SEMICOLON;
+type          : basicType | type LBRACKET RBRACKET;
+basicType     : integerType | booleanType | stringType | recordType;
+integerType   : INT;
+stringType    : STRING;
+booleanType   : BOOLEAN;
+recordType    : identifier;
+
+identifier    : ID;
+
+///////////////////////////////////////////////////////////////////////////////
+// Lexer rules
+///////////////////////////////////////////////////////////////////////////////
+
+// operators, blocks, arrays indexes, and parameter lists
+LPAREN:        '(';
+RPAREN:        ')';
+LBRACE:        '{';
+RBRACE:        '}';
+LBRACKET:      '[';
+RBRACKET:      ']';
+COLON:         ':';
+SEMICOLON:     ';';
+COMMA:         ',';
+ASSIGN:        '=';
+INCREMENT:     '++';
+DECREMENT:     '--';
+PLUS:          '+';
+MINUS:         '-';
+TIMES:         '*';
+DIV:           '/';
+MOD:           '%';
+DOT:           '.';
+EQUAL:         '==';
+UNEQUAL:       '!=';
+LESSER:        '<';
+GREATER:       '>';
+LESSER_EQ:     '<=';
+GREATER_EQ:    '>=';
+NOT:           '!';
+AND:           '&&';
+OR:            '||';
+
+
+// declaraction
+RECORD:       'record';
+REF:          '&';
+
+// control flow
+IF:           'if';
+ELSE:         'else';
+WHILE:        'while';
+RETURN:       'return';
+
+// types
+VOID:         'void';
+INT:          'int';
+BOOLEAN:      'bool';
+STRING:       'text';
+
+// values
+TRUE:           'true';
+FALSE:          'false';
+INTEGER:        ('+'|'-')?[0-9]+;
+STRINGCONSTANT: '"' (~'"')* '"'; //
+
+// identifiers: order is important as all other keywords have precendence
+ID : [a-zA-Z][a-zA-Z0-9_$]*;
+
+// comments
+LINE_COMMENT: '//' ~[\r\n]* -> skip; // skip contents of line comments
+BLOCKCOMMENT: '/*' .*? '*/' -> skip; // skip contents of block comments
+WS:           [ \t\r\n]+    -> skip; // skip spaces, tabs, newlines
