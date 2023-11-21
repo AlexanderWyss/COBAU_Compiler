@@ -1,25 +1,18 @@
 package ch.hslu.cobau.minij;
 
-import org.antlr.v4.runtime.*;
+import ch.hslu.cobau.minij.ast.AstBuilder;
+import ch.hslu.cobau.minij.ast.entity.Unit;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
+import ch.hslu.cobau.minij.symboltable.SymbolTableBuilder;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.IOException;
 
 public class MiniJCompiler {
-    private static class EnhancedConsoleErrorListener extends ConsoleErrorListener {
-        private boolean hasErrors;
 
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-            super.syntaxError(recognizer, offendingSymbol, line, charPositionInLine, msg, e);
-            hasErrors = true;
-        }
-
-        public boolean hasErrors() {
-            return hasErrors;
-        }
-    }
-
-    public static void main(String[] args) throws IOException {    
+    public static void main(String[] args) throws IOException {
         // initialize lexer and parser
         CharStream charStream;
         if (args.length > 0) {
@@ -27,21 +20,44 @@ public class MiniJCompiler {
         } else {
             charStream = CharStreams.fromStream(System.in);
         }
-        
-        MiniJLexer miniJLexer = new MiniJLexer(charStream);
-        CommonTokenStream commonTokenStream = new CommonTokenStream(miniJLexer);
-        MiniJParser miniJParser = new MiniJParser(commonTokenStream);
-        
-        EnhancedConsoleErrorListener errorListener = new EnhancedConsoleErrorListener();
+        boolean isSuccessful = new MiniJCompiler().run(charStream);
+        System.exit(isSuccessful ? 1 : 0);
+    }
+
+    /**
+     * Runs the MinijCompiler
+     *
+     * @param charStream the code
+     * @return true if it was successfully compiled, false otherwise
+     */
+    public boolean run(CharStream charStream) {
+        final MiniJLexer miniJLexer = new MiniJLexer(charStream);
+        final CommonTokenStream commonTokenStream = new CommonTokenStream(miniJLexer);
+        final MiniJParser miniJParser = new MiniJParser(commonTokenStream);
+
+        final EnhancedConsoleErrorListener errorListener = new EnhancedConsoleErrorListener();
         miniJParser.removeErrorListeners();
         miniJParser.addErrorListener(errorListener);
 
         // start parsing at outermost level (milestone 2)
-        MiniJParser.UnitContext unitContext = miniJParser.unit();
+        final MiniJParser.UnitContext unitContext = miniJParser.unit();
+
+        final AstBuilder astBuilder = new AstBuilder();
+        astBuilder.visitUnit(unitContext);
+        final Unit unit = astBuilder.getUnit();
 
         // semantic check (milestone 3)
+        final SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder(errorListener);
+        unit.accept(symbolTableBuilder);
+        final SymbolTable symbolTable = symbolTableBuilder.getSymbolTable();
+
+        if (!errorListener.hasErrors()) {
+            final TypeChecker typeChecker = new TypeChecker(errorListener, symbolTable);
+            unit.accept(typeChecker);
+        }
+
         // code generation (milestone 4)
-        
-        System.exit(errorListener.hasErrors() ? 1 : 0);
+
+        return errorListener.hasErrors();
     }
 }

@@ -6,8 +6,15 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.entity.Declaration;
+import ch.hslu.cobau.minij.ast.entity.Struct;
+import ch.hslu.cobau.minij.ast.type.RecordType;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class FieldAccess extends MemoryAccess {
     private final Expression base;
@@ -37,5 +44,15 @@ public class FieldAccess extends MemoryAccess {
     @Override
     public void visitChildren(AstVisitor astVisitor) {
         base.accept(astVisitor);
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        Type recordType = base.getResultType(symbolTable, scope);
+        assert recordType instanceof RecordType;
+        Optional<Declaration> fieldDeclaration = symbolTable.getRecordType(((RecordType) recordType).getIdentifier()).getDeclarations().stream()
+                .filter(declaration -> declaration.getIdentifier().equals(field)).findFirst();
+        assert fieldDeclaration.isPresent();
+        return fieldDeclaration.get().getType();
     }
 }

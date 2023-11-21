@@ -6,10 +6,13 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.Objects;
 
-public class UnaryExpression extends Expression  {
+public class UnaryExpression extends Expression {
     private final Expression expression;
     private final UnaryOperator unaryOperator;
 
@@ -37,5 +40,10 @@ public class UnaryExpression extends Expression  {
     @Override
     public void visitChildren(AstVisitor astVisitor) {
         expression.accept(astVisitor);
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        return expression.getResultType(symbolTable, scope);
     }
 }

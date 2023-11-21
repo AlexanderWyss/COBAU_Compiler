@@ -6,6 +6,10 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.entity.Declaration;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.Objects;
 
@@ -24,5 +28,11 @@ public class VariableAccess extends MemoryAccess {
     @Override
     public void accept(AstVisitor astVisitor) {
         astVisitor.visit(this);
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        Declaration symbol = scope.getSymbol(identifier);
+        return symbol == null ? null : symbol.getType();
     }
 }

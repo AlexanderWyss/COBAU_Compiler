@@ -6,6 +6,11 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstElement;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 public abstract class Expression extends AstElement {
+
+    public abstract Type getResultType(SymbolTable symbolTable, Scope scope);
 }

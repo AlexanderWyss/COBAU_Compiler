@@ -6,6 +6,9 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,5 +41,10 @@ public class CallExpression extends Expression {
     @Override
     public void visitChildren(AstVisitor astVisitor) {
         actualParameters.forEach(actualParameter -> actualParameter.accept(astVisitor));
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        return symbolTable.getFunction(identifier).getReturnType();
     }
 }

@@ -6,10 +6,13 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.Objects;
 
-public class BinaryExpression extends Expression  {
+public class BinaryExpression extends Expression {
     private final Expression left;
     private final Expression right;
     private final BinaryOperator binaryOperator;
@@ -45,5 +48,10 @@ public class BinaryExpression extends Expression  {
     public void visitChildren(AstVisitor astVisitor) {
         left.accept(astVisitor);
         right.accept(astVisitor);
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        return left.getResultType(symbolTable, scope);
     }
 }

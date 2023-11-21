@@ -6,6 +6,10 @@
 package ch.hslu.cobau.minij.ast.constants;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.type.IntegerType;
+import ch.hslu.cobau.minij.ast.type.Type;
+import ch.hslu.cobau.minij.symboltable.Scope;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 public class IntegerConstant extends Constant {
     private final long value;
@@ -21,5 +25,10 @@ public class IntegerConstant extends Constant {
     @Override
     public void accept(AstVisitor astVisitor) {
         astVisitor.visit(this);
+    }
+
+    @Override
+    public Type getResultType(SymbolTable symbolTable, Scope scope) {
+        return new IntegerType();
     }
 }
