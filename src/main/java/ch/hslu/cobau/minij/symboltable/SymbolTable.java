@@ -1,10 +1,14 @@
 package ch.hslu.cobau.minij.symboltable;
 
+import ch.hslu.cobau.minij.ast.entity.Declaration;
 import ch.hslu.cobau.minij.ast.entity.Function;
 import ch.hslu.cobau.minij.ast.entity.Struct;
+import ch.hslu.cobau.minij.ast.type.IntegerType;
 import ch.hslu.cobau.minij.ast.type.RecordType;
+import ch.hslu.cobau.minij.ast.type.VoidType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SymbolTable {
@@ -15,6 +19,10 @@ public class SymbolTable {
 
     public SymbolTable() {
         this.global = new Scope();
+        functions.put("writeInt", new Function("writeInt", new VoidType(), List.of(new Declaration("i", new IntegerType(), false)), List.of()));
+        functions.put("readInt", new Function("readInt", new IntegerType(), List.of(), List.of()));
+        functions.put("writeChar", new Function("writeChar", new VoidType(), List.of(new Declaration("c", new IntegerType(), false)), List.of()));
+        functions.put("readChar", new Function("readChar", new IntegerType(), List.of(), List.of()));
     }
 
     public Scope getScope(String identifier) {

@@ -42,19 +42,22 @@ public class MiniJCompiler {
         // start parsing at outermost level (milestone 2)
         final MiniJParser.UnitContext unitContext = miniJParser.unit();
 
-        final AstBuilder astBuilder = new AstBuilder();
+        final AstBuilder astBuilder = new AstBuilder(errorListener);
         astBuilder.visitUnit(unitContext);
         final Unit unit = astBuilder.getUnit();
 
         // semantic check (milestone 3)
-        final SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder(errorListener);
-        unit.accept(symbolTableBuilder);
-        final SymbolTable symbolTable = symbolTableBuilder.getSymbolTable();
-
         if (!errorListener.hasErrors()) {
-            final TypeChecker typeChecker = new TypeChecker(errorListener, symbolTable);
-            unit.accept(typeChecker);
+            final SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder(errorListener);
+            unit.accept(symbolTableBuilder);
+            final SymbolTable symbolTable = symbolTableBuilder.getSymbolTable();
+
+            if (!errorListener.hasErrors()) {
+                final TypeChecker typeChecker = new TypeChecker(errorListener, symbolTable);
+                unit.accept(typeChecker);
+            }
         }
+
 
         // code generation (milestone 4)
 

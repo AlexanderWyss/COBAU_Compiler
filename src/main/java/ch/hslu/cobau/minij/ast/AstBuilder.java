@@ -11,6 +11,8 @@ import ch.hslu.cobau.minij.ast.entity.*;
 import ch.hslu.cobau.minij.ast.expression.*;
 import ch.hslu.cobau.minij.ast.statement.*;
 import ch.hslu.cobau.minij.ast.type.*;
+
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -25,7 +27,12 @@ public class AstBuilder extends MiniJBaseVisitor<Object> {
     private final Stack<Statement> statementsStack = new Stack<>();
     private final Stack<Expression> expressionStack = new Stack<>();
     private final Stack<Type> typeStack = new Stack<>();
+    private final EnhancedConsoleErrorListener errorListener;
     private Unit unit;
+
+    public AstBuilder(EnhancedConsoleErrorListener errorListener) {
+        this.errorListener = errorListener;
+    }
 
     /**
      * @return The root of the generated MiniJ AST.
@@ -190,11 +197,17 @@ public class AstBuilder extends MiniJBaseVisitor<Object> {
 
     @Override
     public Object visitIntegerConstant(MiniJParser.IntegerConstantContext ctx) {
-        long value;
         String inputValue = ctx.INTEGER().getText();
-        value = Long.parseLong(inputValue);
-        expressionStack.push(new IntegerConstant(value));
-
+        BigInteger value = new BigInteger(inputValue);
+        if (value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) >= 1) {
+            errorListener.syntaxError(null, null, ctx.INTEGER().getSymbol().getLine(), ctx.INTEGER().getSymbol().getCharPositionInLine(), ctx.INTEGER().getText() + " is too big.", null);
+            expressionStack.push(new IntegerConstant(Long.MAX_VALUE));
+        } else if (value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) <= -1) {
+            errorListener.syntaxError(null, null, ctx.INTEGER().getSymbol().getLine(), ctx.INTEGER().getSymbol().getCharPositionInLine(), ctx.INTEGER().getText() + " is too small.", null);
+            expressionStack.push(new IntegerConstant(Long.MIN_VALUE));
+        } else {
+            expressionStack.push(new IntegerConstant(value.longValue()));
+        }
         return null;
     }
 

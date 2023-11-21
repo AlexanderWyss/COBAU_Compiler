@@ -23,6 +23,8 @@ import ch.hslu.cobau.minij.ast.statement.DeclarationStatement;
 import ch.hslu.cobau.minij.ast.statement.IfStatement;
 import ch.hslu.cobau.minij.ast.statement.ReturnStatement;
 import ch.hslu.cobau.minij.ast.statement.WhileStatement;
+import ch.hslu.cobau.minij.ast.type.IntegerType;
+import ch.hslu.cobau.minij.ast.type.VoidType;
 
 public class SymbolTableBuilder extends BaseAstVisitor {
     private final EnhancedConsoleErrorListener errorListener;
@@ -43,6 +45,12 @@ public class SymbolTableBuilder extends BaseAstVisitor {
 
     @Override
     public void visit(final Function procedure) {
+        if (procedure.getIdentifier().equals("main")) {
+            if (!procedure.getReturnType().equals(new IntegerType()) || !procedure.getFormalParameters().isEmpty()) {
+                errorListener.semanticError("main function must return int and have no parameters.");
+                return;
+            }
+        }
         if (symbolTable.addFunction(procedure)) {
             currentScope = symbolTable.addScope(procedure.getIdentifier(), this.currentScope);
             super.visit(procedure);
@@ -55,7 +63,7 @@ public class SymbolTableBuilder extends BaseAstVisitor {
     @Override
     public void visit(final Struct recordStructure) {
         if (symbolTable.addRecordType(recordStructure)) {
-            currentScope = new Scope(recordStructure.getIdentifier(), currentScope); // Don't add scope to symbol table
+            currentScope = new Scope(recordStructure.getIdentifier(), currentScope); // Set new scope for duplicate check, do not add to symbol table as we do not actually consider it a scope
             super.visit(recordStructure);
             currentScope = currentScope.getParent();
         } else {

@@ -6,6 +6,7 @@
 package ch.hslu.cobau.minij.ast.expression;
 
 import ch.hslu.cobau.minij.ast.AstVisitor;
+import ch.hslu.cobau.minij.ast.type.ArrayType;
 import ch.hslu.cobau.minij.ast.type.Type;
 import ch.hslu.cobau.minij.symboltable.Scope;
 import ch.hslu.cobau.minij.symboltable.SymbolTable;
@@ -45,6 +46,8 @@ public class ArrayAccess extends MemoryAccess {
 
     @Override
     public Type getResultType(SymbolTable symbolTable, Scope scope) {
-        return base.getResultType(symbolTable, scope);
+        Type arrayType = base.getResultType(symbolTable, scope);
+        assert arrayType instanceof ArrayType;
+        return ((ArrayType) arrayType).getType();
     }
 }

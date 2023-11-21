@@ -49,10 +49,13 @@ public class FieldAccess extends MemoryAccess {
     @Override
     public Type getResultType(SymbolTable symbolTable, Scope scope) {
         Type recordType = base.getResultType(symbolTable, scope);
-        assert recordType instanceof RecordType;
-        Optional<Declaration> fieldDeclaration = symbolTable.getRecordType(((RecordType) recordType).getIdentifier()).getDeclarations().stream()
-                .filter(declaration -> declaration.getIdentifier().equals(field)).findFirst();
-        assert fieldDeclaration.isPresent();
-        return fieldDeclaration.get().getType();
+        if (recordType instanceof RecordType) {
+            Optional<Declaration> fieldDeclaration = symbolTable.getRecordType(((RecordType) recordType).getIdentifier()).getDeclarations().stream()
+                    .filter(declaration -> declaration.getIdentifier().equals(field)).findFirst();
+            if (fieldDeclaration.isPresent()) {
+                return fieldDeclaration.get().getType();
+            }
+        }
+        return null;
     }
 }

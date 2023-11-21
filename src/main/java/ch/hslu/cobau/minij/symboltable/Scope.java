@@ -24,7 +24,7 @@ public class Scope {
     }
 
     public boolean addSymbol(String identifier, Declaration element) {
-        if (hasSymbol(identifier)) {
+        if (hasSymbolInScope(identifier, this)) {
             return false;
         }
         symbols.put(identifier, element);
@@ -34,12 +34,16 @@ public class Scope {
     public boolean hasSymbol(String identifier) {
         Scope currentScope = this;
         do {
-            if (currentScope.symbols.containsKey(identifier)) {
+            if (hasSymbolInScope(identifier, currentScope)) {
                 return true;
             }
             currentScope = currentScope.parent;
         } while (currentScope != null);
         return false;
+    }
+
+    private static boolean hasSymbolInScope(String identifier, Scope currentScope) {
+        return currentScope.symbols.containsKey(identifier);
     }
 
     public Scope getParent() {
@@ -53,7 +57,7 @@ public class Scope {
     public Declaration getSymbol(String identifier) {
         Scope currentScope = this;
         do {
-            if (currentScope.symbols.containsKey(identifier)) {
+            if (hasSymbolInScope(identifier, currentScope)) {
                 return currentScope.symbols.get(identifier);
             }
             currentScope = currentScope.parent;
