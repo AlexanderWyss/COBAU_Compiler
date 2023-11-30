@@ -1,3 +1,9 @@
+;; Copyright (c) 2020-2022 HSLU Informatik. All rights reserved.
+;; This code and any derivative work thereof must remain private.
+;; Public distribution is prohibited.
+
+DEFAULT REL
+
 global _read
 global _write
 global _exit

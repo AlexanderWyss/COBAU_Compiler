@@ -1,0 +1,393 @@
+{
+    "name"                  : "Code Generation",
+    "commandline"           : "bin/mjtest_${os}${shell_ext}",
+    "description"           : "A set of system tests to verify, whether the compiler is able to generate a binary out of a miniJ program",
+    "startScore"            : 0,
+    "timeoutMilliseconds"   : 3000,
+    "testCases" : [
+    {
+        "name"             : "(main) Main",
+        "input"            : "int main() {\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "",
+        "score"            : 5.0
+    },
+    {
+        "name"             : "(built-in) writeInt",
+        "input"            : "int main() {\n    writeInt(7471857118);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "7471857118",
+        "score"            : 3.0
+    },
+    {
+        "name"             : "(built-in) writeChar",
+        "input"            : "int main() {\n    writeChar(72);\n    writeChar(97);\n    writeChar(108);\n    writeChar(108);\n    writeChar(111);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "Hallo",
+        "score"            : 2.0
+    },
+    {
+        "name"             : "(assignment) Local",
+        "input"            : "int main() {\n    int a;\n    int b;\n    a = 1;\n    b = 2;\n    writeInt(a);\n    writeInt(b);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "12",
+        "score"            : 0.8
+    },
+    {
+        "name"             : "(globals|assignment) Global",
+        "input"            : "int a;\nint b;\nint main() {\n    a = 1;\n    b = 2;\n    writeInt(a);\n    writeInt(b);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "12",
+        "score"            : 2.3
+    },
+    {
+        "name"             : "(assignment) Konstante (integer)",
+        "input"            : "int main() {\n    int myValue;\n    myValue = -123;\n    writeInt(myValue);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "-123",
+        "score"            : 0.8
+    },
+    {
+        "name"             : "(if) einfaches if (true)",
+        "input"            : "int main() {\n    if (1==1) {\n        writeInt(123);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(if|assignment) Konstante (bool)",
+        "input"            : "int main() {\n    bool flag;\n    flag = true;\n    if (flag) {\n        writeInt(123);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123",
+        "score"            : 1.0
+    },
+    {
+        "name"             : "(globals|if) einfaches if (true)",
+        "input"            : "bool value;\nint main() {\n    value = true;\n    if (value) {\n        writeInt(42);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "42",
+        "score"            : 1.9
+    },
+    {
+        "name"             : "(if) einfaches if (false)",
+        "input"            : "int main() {\n    writeInt(123);\n    if (false) {\n        writeInt(456);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(if) if else (true)",
+        "input"            : "int main() {\n    writeInt(123);\n    if (true) {\n        writeInt(456);\n    } else {\n        writeInt(789);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123456",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(if) if else (false)",
+        "input"            : "int main() {\n    writeInt(123);\n    if (false) {\n        writeInt(456);\n    } else {\n        writeInt(789);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123789",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(if) if else if (false dann true)",
+        "input"            : "int main() {\n    writeInt(123);\n    if (false) {\n        writeInt(456);\n    } else if (true) {\n        writeInt(789);\n    } else {\n        writeInt(123);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123789",
+        "score"            : 0.3
+    },
+    {
+        "name"             : "(if) if else if (false dann true)",
+        "input"            : "int main() {\n    writeInt(123);\n    if (false) {\n        writeInt(456);\n    } else {\n       if (true) {\n           writeInt(789);\n       } else {\n           writeInt(123);\n       }\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123789",
+        "score"            : 0.3
+    },
+    {
+        "name"             : "(while) Keine Iterationen",
+        "input"            : "int main() {\n    bool flag;\n    flag = false;\n    while (flag) {\n    }\n    writeInt(123);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123",
+        "score"            : 0.75
+    },
+    {
+        "name"             : "(while) Eine Iteration",
+        "input"            : "int main() {\n    bool flag;\n    flag = true;\n    while (flag) {\n        flag = false;\n        writeInt(123);\n    }\n    writeInt(123);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123123",
+        "score"            : 0.75
+    },
+    {
+        "name"             : "(while) (expr) Summenformel",
+        "input"            : "int main() {\n    int i;\n    int result;\n    while(i <= 10) {\n       result = result + i;\n       i = i + 1;\n    }\n    writeInt(result);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "55",
+        "score"            : 0.75
+    },
+    {
+        "name"             : "(while) Verschachtelte Summenformel",
+        "input"            : "int main() {\n    int i;\n    int j;\n    int result;\n    while(i <= 10) {\n        j = 0;\n        while(j <= 10) {\n            result = result + j;\n            j = j + 1;\n        }\n        i = i + 1;\n    }\n    writeInt(result);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "605",
+        "score"            : 0.75
+    },
+    {
+        "name"             : "(call) Ein Parameter",
+        "input"            : "void myProc1(int a) {\n    writeInt(a);\n}\nint main() {\n    myProc1(23);\n    myProc1(42);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "2342",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(call) Zwei Parameter",
+        "input"            : "void myProc1(int a, int b) {\n    writeInt(a);\n    writeInt(b);\n}\nint main() {\n    myProc1(12, 13);\n    myProc1(-12, -13);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "1213-12-13",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(call) Drei Parameter",
+        "input"            : "void myProc1(int a, int b, int c) {\n    writeInt(c);\n    writeInt(b);\n    writeInt(a);\n}\nint main() {\n    myProc1(12,13,14);\n    myProc1(1000,2000,-4000);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "141312-400020001000",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(call) Acht Parameter",
+        "input"            : "void myProc1(int a, int b, int c, int d, int e, int f, int g, int h) {\n    int sum;\n    sum = a + b + c + d + e + f + g + h;\n    writeInt(sum);\n}\nint main() {\n    myProc1(1, 1, 1, 1, 1, 1, 1, 1);\n    myProc1(1, 2, 3, 4, 5, 6, 7, 8);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "836",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "(call) Verschachtelte Aufrufe",
+        "input"            : "void myProc1(int a) {\n    writeInt(a);\n}\nvoid myProc2(int a) {\n    writeInt(a);\n}\nvoid myProc3() {\n    myProc1(42);\n    myProc2(23);\n}\nint main() {\n    myProc3();\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "4223",
+        "score"            : 0.2
+    },
+    {
+        "name"             : "(call) Rekursive Aufrufe",
+        "input"            : "void rec(int a) {\n    if (a == 42) {\n        writeInt(a);\n    } else {\n        rec(a + 1);\n    }\n}\nint main() {\n    rec(0);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "42",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(return) Einfaches Return",
+        "input"            : "void myProc() {\n    writeInt(13);\n    return;\n    writeInt(14);\n}\nint main() {\n    myProc();\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "13",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(return) Return exitcode",
+        "input"            : "int main() {\n    return 42;\n}",
+        "expectedExitCode" : "42",
+        "expectedOutput"   : "",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(return) PrintMax mit Result",
+        "input"            : "void max(int a, int b) {\n    if (a > b) {\n        writeInt(a);\n        return;\n    }\n    writeInt(b);\n}\nint main() {\n    max(4, 5);\n    max(-12,-56);\n    max(-20,20000000);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "5-1220000000",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(return) Einfaches Return mit Integer",
+        "input"            : "int myProc()  {\n    return 42;\n}\nint main() {\n    int value;\n    value = myProc();\n    writeInt(value);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "42",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(return) PrintMax mit Result",
+        "input"            : "int max(int a, int b)  {\n    if (a > b) {\n        return a;\n    } else {\n        return b;\n    }\n}\nint main() {\n    writeInt(max(4, 5));\n    writeInt(max(-12,-56));\n    writeInt(max(-20,20000000));\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "5-1220000000",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(expression) Arithmetische Operationen (Addition)",
+        "input"            : "int main() {\n    int a;\n    int b;\n    int c;\n    a = 1;\n    writeInt(a);\n    b = 1 + 3;\n    writeInt(b);\n    c = 1 + a;\n    writeInt(c);\n    c = a + b;\n    writeInt(c);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "1425",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(expression) Arithmetische Operationen (Subtraktion)",
+        "input"            : "int main() {\n    int a;\n    int b;\n    a = 24;\n    writeInt(a);\n    b = 109 - a;\n    writeInt(b);\n    b = 109 - a + 3;\n    writeInt(b);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "248588",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(expression) Arithmetische Operationen (Multiplikation)",
+        "input"            : "int main() {\n    int a;\n    int b;\n    int c;\n    a = 24;\n    writeInt(a);\n    b = 106;\n    writeInt(b);\n    c = b * a;\n    writeInt(c);\n    c = b * a * c + 3;\n    writeInt(c);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "2410625446471939",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(expression) Arithmetische Operationen (Division)",
+        "input"            : "int main() {\n    int a;\n    int b;\n    int c;\n    int d;\n    a = 2400;\n    writeInt(a);\n    b = a / 2;\n    writeInt(b);\n    c = a / (-1 * 109);\n    writeInt(c);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "24001200-22",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(expression) Arithmetische Operationen (Divisonsrest)",
+        "input"            : "int main() {\n    int b;\n    int c;\n    int d;\n    b = 103;\n    c = 23;\n    writeInt(c);\n    d = c + (108 % b);\n    writeInt(d);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "2328",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(expression) Boolean Expressions (arith. Gleichheit) ",
+        "input"            : "void writeBoolean(bool value) {\n    if (value) {\n        writeInt(1);\n    } else {\n        writeInt(0);\n    }\n}\nint main() {\n    int a;\n    int b;\n    a = 10;\n    b = 3;\n    writeBoolean(1 != 1);\n    writeBoolean(1 != 2);\n    writeBoolean(1 == 1);\n    writeBoolean(1 == 2);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "0110",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(expression) Boolean Expressions (arith. Vergleiche) ",
+        "input"            : "void writeBoolean(bool value) {\n    if (value) { writeInt(1); } else { writeInt(0); }\n}\nint main() {\n    int a;\n    int b;\n    a = 10;\n    b = 3;\n    writeBoolean(b > 2);\n    writeBoolean(2 > b);\n    writeBoolean(-5 < a);\n    writeBoolean(a < -5);\n    writeBoolean(-1 >= -2);\n    writeBoolean(-1 >= -1);\n    writeBoolean(100000 <= -5);\n    writeBoolean(100000 <= 100000);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "10101101",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(expression) Boolean Expressions (bool)",
+        "input"            : "void writeBoolean(bool value) {\n    if (value) { writeInt(1); } else { writeInt(0); }\n}\nint main() {\n    bool res;\n    writeBoolean(true);\n    writeBoolean(false);\n    res = true == false;\n    writeBoolean(res);\n    res = true == true;\n    writeBoolean(res);\n    res = true != false;\n    writeBoolean(res);\n    res = true != true;\n    writeBoolean(res);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "100110",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(expression) Complex",
+        "input"            : "int main() {\n    int a;\n    int b;\n    a = 5;\n    b = 10;\n    if (3 <= a && a <= 10) {\n        writeInt(12);\n    }\n    if (!(3 <= a && a <= 10)) {\n        writeInt(34);\n    }\n    if (3 > 5 || a == a) {\n        writeInt(56);\n    }\n    if (3 > 5 && a == a) {\n        writeInt(78);\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "1256",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(program) Count",
+        "input"            : "int main() {\n    int i;\n    i = 10;\n    while(i > 0) {\n        writeInt(i);\n        writeChar(10);\n        i = i - 1;\n    }\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "10\n9\n8\n7\n6\n5\n4\n3\n2\n1",
+        "score"            : 0.7
+    },
+    {
+        "name"             : "(program) Max",
+        "input"            : "int result;\nvoid max(int a, int b) {\n    if (a > b) {\n        result = a;\n    } else {\n        result = b;\n    }\n}\nint main() {\n    int value1;\n    int value2;\n    int value3;\n    max(45, 12);\n    value1 = result;\n    max(-1200000, 120444444);\n    value2 = result;\n    max(value1, value2);\n    value3 = result;\n    writeInt(value1);\n    writeInt(value2);\n    writeInt(value3);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "45120444444120444444",
+        "score"            : 0.6
+    },
+    {
+        "name"             : "(program) Fibonacci",
+        "input"            : "int fib(int a)  {\n    if (a == 1 || a == 2) {\n        return 1;\n    } else {\n        return fib(a - 1) + fib(a - 2);\n    }\n}\nint main() {\n    int value;\n    value = fib(23);\n    writeInt(fib(23));\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "28657",
+        "score"            : 0.6
+    },
+    {
+        "name"             : "(program) Sort",
+        "input"            : "int a0;\nint a1;\nint a2;\nint a3;\nint a4;\nint retval;\nvoid set(int index, int value) {\n   if (index == 0) { a0 = value; }\n   else if (index == 1) { a1 = value; }\n   else if (index == 2) { a2 = value; }\n   else if (index == 3) { a3 = value; }\n   else { a4 = value; }\n}\nvoid get(int index) {\n   if (index == 0) { retval = a0; }\n   else if (index == 1) { retval = a1; }\n   else if (index == 2) { retval = a2; }\n   else if (index == 3) { retval = a3; }\n   else { retval = a4; }\n}\nvoid print() {\n    writeInt(a0); writeChar(44);\n    writeInt(a1); writeChar(44);\n    writeInt(a2); writeChar(44);\n    writeInt(a3); writeChar(44);\n    writeInt(a4); writeChar(10);\n}\nvoid sort() {\n    int i;\n    int n;\n    bool swapped;\n    int prev;\n    n = 5;\n    swapped = true;\n    while(swapped) {\n        i = 0;\n        swapped = false;\n        while (i < n - 1) {\n            get(i);\n            prev = retval;\n            get(i + 1);\n            if (prev > retval) {\n                get(i);\n                prev = retval;\n                get(i + 1);\n                set(i, retval);\n                set(i + 1, prev);\n                swapped = true;\n            }\n            i = i + 1;\n        }\n        n = n - 1;\n   }\n}\nint main() {\n    a0 = 3; a1 = 1; a2 = 4; a3 = 23; a4= -3;\n    print();\n    sort();\n    print();\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "3,1,4,23,-3\n-3,1,3,4,23",
+        "score"            : 0.6
+    },
+    {
+        "name"             : "(reference) int",
+        "input"            : "void myProc1(int& a) {\n    a = 13;\n}\nint main() {\n    int myRef;\n    myProc1(myRef);\n    writeInt(myRef);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "13",
+        "score"            : 1.5
+    },
+    {
+        "name"             : "(reference) readInt",
+        "input"            : "int main() {\n    int value;\n    value = readInt();\n    writeInt(value);\n    return 0;\n}\n----INPUT----\n42",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "42",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "(reference) readChar",
+        "input"            : "int main() {\n    int value;\n    value = readChar();\n    writeChar(value);\n    return 0;\n}\n----INPUT----\nM",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "M",
+        "score"            : 0.25
+    },
+    {
+        "name"             : "(struct) Zugriff",
+        "input"            : "record coordinates {\n   int x;\n   int y;\n}\nint main() {\n    coordinates c;\n    c.x = 147;\n    c.y = -23;\n    writeInt(c.x);\n    writeInt(c.y);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "147-23",
+        "score"            : 1.5
+    },
+    {
+        "name"             : "(struct) Berechnung",
+        "input"            : "record coordinates {\n   int x;\n   int y;\n}\nint main() {\n    coordinates c;\n    int result;\n    c.x = 2;\n    c.y = 104;\n    result = (c.x * c.x + c.y * c.y) / c.x;\n    writeInt(result);\n    writeInt(c.y);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "5410104",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(struct) Parameter",
+        "input"            : "record coord3d {\n   int x;\n   int y;\n   int z;\n}\nvoid print(coord3d c) {\n    writeInt(c.x);\n    writeInt(c.y);\n    writeInt(c.z);\n}\nint main() {\n    coord3d x;\n    x.x = -23;\n    x.y = 1024;\n    x.z = -2;\n    print(x);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "-231024-2",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(struct|reference) Reference Parameter",
+        "input"            : "record coord3d {\n   int x;\n   int y;\n   int z;\n}\nvoid add(coord3d& c, int value) {\n    c.x = c.x + value;\n    c.y = c.y + value;\n    c.z = c.z + value;\n}\nvoid print(coord3d c) {\n    writeInt(c.x);\n    writeInt(c.y);\n    writeInt(c.z);\n}\nint main() {\n    coord3d x;\n    x.x = -23;\n    x.y = 1024;\n    x.z = -2;\n    add(x, 25);\n    print(x);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "2104923",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(incdec) increment (pre)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 10;\n    res = ++a;\n    writeInt(res);\n    writeInt(a);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "1111",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(incdec) increment (post)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 10;\n    res = a++;\n    writeInt(res);\n    writeInt(a);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "1011",
+        "score"            : 0.35
+    },
+    {
+        "name"             : "(incdec) decrement (pre)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 10;\n    res = --a;\n    writeInt(res);\n    writeInt(a);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "99",
+        "score"            : 0.4
+    },
+    {
+        "name"             : "(incdec) decrement (post)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 10;\n    res = a--;\n    writeInt(res);\n    writeInt(a);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "109",
+        "score"            : 0.35
+    },
+    {
+        "name"             : "(circuit) Kurzschluss (und)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 123;\n    if (a == 0 && a++ == 0) {\n    }\n    writeInt(a); // a++ not executed\n    a = 123;\n    if (a == 123 && a++ == 123) {\n    }\n    writeInt(a); // a++ executed\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123124",
+        "score"            : 0.5
+    },
+    {
+        "name"             : "(circuit) Kurzschluss (oder)",
+        "input"            : "int main() {\n    int a;\n    int res;\n    a = 123;\n    if (a == 123 || a++ == 123) {\n    }\n    writeInt(a); // a++ not executed\n    a = 123;\n    if (a == 0 || a++ == 0) {\n    }\n    writeInt(a);  // a++ executed\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "123124",
+        "score"            : 0.5
+    }  ]
+}
