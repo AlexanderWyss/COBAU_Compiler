@@ -30,11 +30,13 @@ public class CodeGenerator extends BaseAstVisitor {
     private String currentScope = null;
     private final Map<String, Map<String, Integer>> scopes = new HashMap<>();
     private final Set<String> globals = new HashSet<>();
-    private final Stack<String> expressions = new Stack<>();
+    private final Deque<String> expressions = new LinkedList<>();
     private final Deque<String> statements = new ArrayDeque<>();
     private int ifLabels = 0;
     private int whileLabels = 0;
     private int cmpLabels = 0;
+
+    private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
     private Map<String, Integer> getLocals() {
         return scopes.computeIfAbsent(currentScope, ident -> new HashMap<>());
@@ -118,6 +120,8 @@ public class CodeGenerator extends BaseAstVisitor {
         super.visit(procedure);
         if ("main".equals(procedure.getIdentifier())) {
             code.append(formatUnindented("_start:"));
+        } else {
+            code.append(formatUnindented("%s:", currentScope));
         }
         code.append(formatIndented("""
                 push rbp
@@ -128,28 +132,56 @@ public class CodeGenerator extends BaseAstVisitor {
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(formatIndented("sub rsp, %d", stackSize));
 
+        for (int i = 0; i < procedure.getFormalParameters().size(); i++) {
+            if (i < PARAM_REGISTERS.size()) {
+                code.append(formatIndented("mov %s, %s", getVariable(procedure.getFormalParameters().get(i).getIdentifier()), PARAM_REGISTERS.get(i)));
+            } else {
+                code.append(formatIndented("mov rax, [rbp+%d]", (i - PARAM_REGISTERS.size()) * 8 + 16));
+                code.append(formatIndented("mov %s, rax", getVariable(procedure.getFormalParameters().get(i).getIdentifier())));
+            }
+        }
+// TODO init local vars 0
+
         while (!statements.isEmpty()) {
             code.append(statements.poll());
         }
 
         if ("main".equals(procedure.getIdentifier())) {
             code.append(formatUnindented("""
+                    .procEnd:
                     exit:
+                        mov rsp, rbp
+                        pop rbp
                         mov rdi, 0
                         call _exit
                      """));
+        } else {
+            code.append(formatUnindented("""
+                    .procEnd:
+                        mov rsp, rbp
+                        pop rbp
+                        ret
+                    """));
         }
-        code.append(formatIndented("""
-                mov rsp, rbp
-                pop rbp
-                """));
     }
 
     @Override
     public void visit(final CallExpression callExpression) {
         super.visit(callExpression);
-        addIndented("mov rdi, %s", expressions.pop());
+        for (int i = 0; !expressions.isEmpty(); i++) {
+            if (i < PARAM_REGISTERS.size()) {
+                addIndented("mov %s, %s", PARAM_REGISTERS.get(i), expressions.removeLast());
+            } else {
+                addIndented("""
+                        mov rax, %s
+                        push rax
+                        """, expressions.removeLast());
+            }
+        }
         addIndented("call %s", callExpression.getIdentifier());
+        for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
+            addIndented("pop rdi");
+        }
     }
 
     @Override
