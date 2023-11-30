@@ -35,6 +35,7 @@ public class CodeGenerator extends BaseAstVisitor {
     private int ifLabels = 0;
     private int whileLabels = 0;
     private int cmpLabels = 0;
+    private int requiresReturnVal = 0;
 
     private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
@@ -109,6 +110,14 @@ public class CodeGenerator extends BaseAstVisitor {
         code.append(formatUnindented("""
                 section .text
                 global _start
+                _start:
+                    push rbp
+                    mov rbp, rsp
+                    call main
+                    mov rsp, rbp
+                    pop rbp
+                    mov rdi, rax
+                    call _exit
                         """));
         program.visitFunctions(this);
         program.visitStructs(this);
@@ -118,11 +127,7 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final Function procedure) {
         currentScope = procedure.getIdentifier();
         super.visit(procedure);
-        if ("main".equals(procedure.getIdentifier())) {
-            code.append(formatUnindented("_start:"));
-        } else {
-            code.append(formatUnindented("%s:", currentScope));
-        }
+        code.append(formatUnindented("%s:", currentScope));
         code.append(formatIndented("""
                 push rbp
                 mov rbp, rsp
@@ -140,35 +145,39 @@ public class CodeGenerator extends BaseAstVisitor {
                 code.append(formatIndented("mov %s, rax", getVariable(procedure.getFormalParameters().get(i).getIdentifier())));
             }
         }
-// TODO init local vars 0
+        // TODO init local vars 0
 
         while (!statements.isEmpty()) {
             code.append(statements.poll());
         }
 
-        if ("main".equals(procedure.getIdentifier())) {
-            code.append(formatUnindented("""
-                    .procEnd:
-                    exit:
-                        mov rsp, rbp
-                        pop rbp
-                        mov rdi, 0
-                        call _exit
-                     """));
-        } else {
-            code.append(formatUnindented("""
-                    .procEnd:
-                        mov rsp, rbp
-                        pop rbp
-                        ret
-                    """));
-        }
+        code.append(formatUnindented("""
+                _%sEnd:
+                    mov rsp, rbp
+                    pop rbp
+                    ret
+                """, currentScope));
+        currentScope = null;
     }
 
     @Override
+    public void visit(final ReturnStatement returnStatement) {
+        requiresReturnVal++;
+        super.visit(returnStatement);
+        requiresReturnVal--;
+        if (!expressions.isEmpty()) {
+            addIndented("mov rax, %s", expressions.pop());
+        }
+        addIndented("jmp _%sEnd", currentScope);
+    }
+
+
+    @Override
     public void visit(final CallExpression callExpression) {
+        requiresReturnVal++;
         super.visit(callExpression);
-        for (int i = 0; !expressions.isEmpty(); i++) {
+        requiresReturnVal--;
+        for (int i = 0; i < callExpression.getParameters().size(); i++) {
             if (i < PARAM_REGISTERS.size()) {
                 addIndented("mov %s, %s", PARAM_REGISTERS.get(i), expressions.removeLast());
             } else {
@@ -181,6 +190,9 @@ public class CodeGenerator extends BaseAstVisitor {
         addIndented("call %s", callExpression.getIdentifier());
         for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
             addIndented("pop rdi");
+        }
+        if (requiresReturnVal > 0) {
+            expressions.push("rax");
         }
     }
 
@@ -196,7 +208,9 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final IfStatement ifStatement) {
+        requiresReturnVal++;
         ifStatement.visitExpression(this);
+        requiresReturnVal--;
         int ifCount = ifLabels++;
         String ifLabel = format("if%d", ifCount);
         String endIfLabel = format("endIf%d", ifCount);
@@ -219,7 +233,9 @@ public class CodeGenerator extends BaseAstVisitor {
         add("%s:", whileLabel);
         whileStatement.visitBlock(this);
         add("%s:", endWhileLabel);
+        requiresReturnVal++;
         whileStatement.visitExpression(this);
+        requiresReturnVal--;
         addIndented("mov rax, %s", expressions.pop());
         addIndented("cmp rax, 1");
         addIndented("je %s", whileLabel);
@@ -227,7 +243,9 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final AssignmentStatement assignment) {
+        requiresReturnVal++;
         super.visit(assignment);
+        requiresReturnVal--;
         String right = expressions.pop();
         String left = expressions.pop();
         addIndented("mov qword %s, %s", left, right);
@@ -235,7 +253,9 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final BinaryExpression binaryExpression) {
+        requiresReturnVal++;
         super.visit(binaryExpression);
+        requiresReturnVal--;
         String right = expressions.pop();
         String left = expressions.pop();
         addIndented("mov rax, %s", left);
@@ -319,11 +339,6 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final Struct recordStructure) {
         super.visit(recordStructure);
-    }
-
-    @Override
-    public void visit(final ReturnStatement returnStatement) {
-        super.visit(returnStatement);
     }
 
     @Override
