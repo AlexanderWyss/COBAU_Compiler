@@ -6,7 +6,12 @@ public class MiniJCompilerTest {
 
     private static final String CODE = """
             int main() {
-                Coordinate coordinate;
+                bool flag;
+                flag = true;
+                if (flag) {
+                    writeInt(123);
+                }
+                return 0;
             }
             """;
 

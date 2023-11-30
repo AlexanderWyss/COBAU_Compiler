@@ -44,4 +44,17 @@ public class IfStatement extends Block {
             elseBlock.accept(astVisitor);    // statements in "else"-branch
         }
     }
+
+    public void visitExpression(AstVisitor astVisitor) {
+        expression.accept(astVisitor);
+    }
+
+    public void visitBlock(AstVisitor astVisitor) {
+        super.visitChildren(astVisitor); // statements in "if"-branch
+    }
+    public void visitElse(AstVisitor astVisitor) {
+        if (elseBlock != null) {
+            elseBlock.accept(astVisitor);    // statements in "else"-branch
+        }
+    }
 }

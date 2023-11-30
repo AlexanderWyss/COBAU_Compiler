@@ -2,6 +2,7 @@ package ch.hslu.cobau.minij;
 
 import ch.hslu.cobau.minij.ast.AstBuilder;
 import ch.hslu.cobau.minij.ast.entity.Unit;
+import ch.hslu.cobau.minij.generation.CodeGenerator;
 import ch.hslu.cobau.minij.symboltable.SymbolTable;
 import ch.hslu.cobau.minij.symboltable.SymbolTableBuilder;
 import org.antlr.v4.runtime.CharStream;
@@ -9,6 +10,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.IOException;
+import java.io.PrintStream;
 
 public class MiniJCompiler {
 
@@ -21,17 +23,22 @@ public class MiniJCompiler {
             charStream = CharStreams.fromStream(System.in);
         }
         boolean isSuccessful = new MiniJCompiler().run(charStream);
-        System.exit(isSuccessful ? 1 : 0);
+        System.exit(isSuccessful ? 0 : 1);
+    }
+
+    public boolean run(CharStream in) {
+        return run(in, System.out);
     }
 
     /**
      * Runs the MinijCompiler
      *
-     * @param charStream the code
+     * @param in  the code
+     * @param out the generated asm
      * @return true if it was successfully compiled, false otherwise
      */
-    public boolean run(CharStream charStream) {
-        final MiniJLexer miniJLexer = new MiniJLexer(charStream);
+    public boolean run(CharStream in, PrintStream out) {
+        final MiniJLexer miniJLexer = new MiniJLexer(in);
         final CommonTokenStream commonTokenStream = new CommonTokenStream(miniJLexer);
         final MiniJParser miniJParser = new MiniJParser(commonTokenStream);
 
@@ -58,9 +65,13 @@ public class MiniJCompiler {
             }
         }
 
-
         // code generation (milestone 4)
+        if (!errorListener.hasErrors()) {
+            final CodeGenerator codeGenerator = new CodeGenerator();
+            unit.accept(codeGenerator);
+            out.print(codeGenerator.getCode());
+        }
 
-        return errorListener.hasErrors();
+        return !errorListener.hasErrors();
     }
 }
