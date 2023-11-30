@@ -9,17 +9,8 @@ import ch.hslu.cobau.minij.ast.entity.Declaration;
 import ch.hslu.cobau.minij.ast.entity.Function;
 import ch.hslu.cobau.minij.ast.entity.Struct;
 import ch.hslu.cobau.minij.ast.entity.Unit;
-import ch.hslu.cobau.minij.ast.expression.ArrayAccess;
-import ch.hslu.cobau.minij.ast.expression.BinaryExpression;
-import ch.hslu.cobau.minij.ast.expression.CallExpression;
-import ch.hslu.cobau.minij.ast.expression.FieldAccess;
-import ch.hslu.cobau.minij.ast.expression.UnaryExpression;
-import ch.hslu.cobau.minij.ast.expression.VariableAccess;
-import ch.hslu.cobau.minij.ast.statement.AssignmentStatement;
-import ch.hslu.cobau.minij.ast.statement.Block;
-import ch.hslu.cobau.minij.ast.statement.IfStatement;
-import ch.hslu.cobau.minij.ast.statement.ReturnStatement;
-import ch.hslu.cobau.minij.ast.statement.WhileStatement;
+import ch.hslu.cobau.minij.ast.expression.*;
+import ch.hslu.cobau.minij.ast.statement.*;
 
 import java.util.*;
 
@@ -35,7 +26,6 @@ public class CodeGenerator extends BaseAstVisitor {
     private int ifLabels = 0;
     private int whileLabels = 0;
     private int cmpLabels = 0;
-    private int requiresReturnVal = 0;
 
     private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
@@ -162,9 +152,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final ReturnStatement returnStatement) {
-        requiresReturnVal++;
         super.visit(returnStatement);
-        requiresReturnVal--;
         if (!expressions.isEmpty()) {
             addIndented("mov rax, %s", expressions.pop());
         }
@@ -174,9 +162,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final CallExpression callExpression) {
-        requiresReturnVal++;
         super.visit(callExpression);
-        requiresReturnVal--;
         for (int i = 0; i < callExpression.getParameters().size(); i++) {
             if (i < PARAM_REGISTERS.size()) {
                 addIndented("mov %s, %s", PARAM_REGISTERS.get(i), expressions.removeLast());
@@ -191,10 +177,21 @@ public class CodeGenerator extends BaseAstVisitor {
         for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
             addIndented("pop rdi");
         }
-        if (requiresReturnVal > 0) {
-            expressions.push("rax");
-        }
+        expressions.push("rax");
     }
+
+    @Override
+    public void visit(CallStatement callStatement) {
+        super.visit(callStatement);
+        expressions.pop(); // unused return value from CallExpression
+    }
+
+    @Override
+    public void visit(DeclarationStatement declarationStatement) {
+        super.visit(declarationStatement);
+        // TODO maybe use this for declarations because of structs
+    }
+
 
     @Override
     public void visit(final Declaration declaration) {
@@ -208,9 +205,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final IfStatement ifStatement) {
-        requiresReturnVal++;
         ifStatement.visitExpression(this);
-        requiresReturnVal--;
         int ifCount = ifLabels++;
         String ifLabel = format("if%d", ifCount);
         String endIfLabel = format("endIf%d", ifCount);
@@ -233,9 +228,7 @@ public class CodeGenerator extends BaseAstVisitor {
         add("%s:", whileLabel);
         whileStatement.visitBlock(this);
         add("%s:", endWhileLabel);
-        requiresReturnVal++;
         whileStatement.visitExpression(this);
-        requiresReturnVal--;
         addIndented("mov rax, %s", expressions.pop());
         addIndented("cmp rax, 1");
         addIndented("je %s", whileLabel);
@@ -243,9 +236,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final AssignmentStatement assignment) {
-        requiresReturnVal++;
         super.visit(assignment);
-        requiresReturnVal--;
         String right = expressions.pop();
         String left = expressions.pop();
         addIndented("mov qword %s, %s", left, right);
@@ -253,9 +244,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final BinaryExpression binaryExpression) {
-        requiresReturnVal++;
         super.visit(binaryExpression);
-        requiresReturnVal--;
         String right = expressions.pop();
         String left = expressions.pop();
         addIndented("mov rax, %s", left);
