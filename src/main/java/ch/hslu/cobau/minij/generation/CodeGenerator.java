@@ -265,6 +265,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 throw new UnsupportedOperationException();
             }
             case EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
+                // TODO this is kinda stupid
                 add("compare%d:", cmpLabels++);
                 addIndented("cmp rax, %s", right);
                 switch (binaryExpression.getBinaryOperator()) {
