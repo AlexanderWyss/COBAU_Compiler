@@ -6,13 +6,15 @@ public class MiniJCompilerTest {
 
     private static final String CODE = """
             int main() {
-                bool flag;
-                flag = true;
-                if (flag) {
-                    writeInt(123);
-                }
-                return 0;
-            }
+                 int i;
+                 int result;
+                 while(i <= 10) {
+                    result = result + i;
+                    i = i + 1;
+                 }
+                 writeInt(result);
+                 return 0;
+             }
             """;
 
     public static void main(final String[] args) {

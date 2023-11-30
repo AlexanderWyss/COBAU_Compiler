@@ -35,4 +35,12 @@ public class WhileStatement extends Block {
         expression.accept(astVisitor);
         super.visitChildren(astVisitor);
     }
+
+    public void visitExpression(AstVisitor astVisitor) {
+        expression.accept(astVisitor);
+    }
+
+    public void visitBlock(AstVisitor astVisitor) {
+        super.visitChildren(astVisitor);
+    }
 }
