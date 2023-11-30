@@ -49,4 +49,16 @@ public class Unit extends AstElement {
         functions.forEach(procedure -> procedure.accept(astVisitor));
         structs.forEach(recordStructure -> recordStructure.accept(astVisitor));
     }
+
+    public void visitDeclarations(AstVisitor astVisitor) {
+        globals.forEach(global -> global.accept(astVisitor));
+    }
+
+    public void visitFunctions(AstVisitor astVisitor) {
+        functions.forEach(procedure -> procedure.accept(astVisitor));
+    }
+
+    public void visitStructs(AstVisitor astVisitor) {
+        structs.forEach(recordStructure -> recordStructure.accept(astVisitor));
+    }
 }

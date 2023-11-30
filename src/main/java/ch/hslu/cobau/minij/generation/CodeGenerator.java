@@ -17,66 +17,90 @@ import ch.hslu.cobau.minij.ast.expression.UnaryExpression;
 import ch.hslu.cobau.minij.ast.expression.VariableAccess;
 import ch.hslu.cobau.minij.ast.statement.AssignmentStatement;
 import ch.hslu.cobau.minij.ast.statement.Block;
-import ch.hslu.cobau.minij.ast.statement.CallStatement;
-import ch.hslu.cobau.minij.ast.statement.DeclarationStatement;
 import ch.hslu.cobau.minij.ast.statement.IfStatement;
 import ch.hslu.cobau.minij.ast.statement.ReturnStatement;
 import ch.hslu.cobau.minij.ast.statement.WhileStatement;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 import static java.lang.String.format;
 
 public class CodeGenerator extends BaseAstVisitor {
     private final StringBuilder code = new StringBuilder();
-    private final Map<String, Integer> localsMap = new HashMap<>();
+    private String currentScope = null;
+    private final Map<String, Map<String, Integer>> scopes = new HashMap<>();
+    private final Set<String> globals = new HashSet<>();
     private final Stack<String> expressions = new Stack<>();
     private final Deque<String> statements = new ArrayDeque<>();
     private int ifLabels = 0;
     private int whileLabels = 0;
     private int cmpLabels = 0;
 
-    private void addLocal(String identifier) {
-        int position = (localsMap.size() + 1);
-        if (!localsMap.containsKey(identifier)) {
-            localsMap.put(identifier, position);
+    private Map<String, Integer> getLocals() {
+        return scopes.computeIfAbsent(currentScope, ident -> new HashMap<>());
+    }
+
+    private void addVariable(String identifier) {
+        if (currentScope != null) {
+            final Map<String, Integer> locals = getLocals();
+            int position = (locals.size() + 1);
+            if (!locals.containsKey(identifier)) {
+                locals.put(identifier, position);
+            }
+        } else {
+            globals.add(identifier);
         }
+    }
+
+    private String getVariable(String identifier) {
+        if (currentScope != null) {
+            final Map<String, Integer> locals = getLocals();
+            if (locals.containsKey(identifier)) {
+                return format("[rbp-%d]", locals.get(identifier) * 8);
+            }
+        }
+        return format("qword[%s]", identifier); // global
     }
 
     @Override
     public void visit(final Unit program) {
+        program.visitDeclarations(this);
         code.append("""
-                            DEFAULT REL
-                            extern writeInt
-                            extern writeChar
-                            extern _exit
-                            extern readInt
-                            extern readChar
-                            section .data
-                            section .text
-                            global _start
-                                    """);
-        super.visit(program);
+                DEFAULT REL
+                extern writeInt
+                extern writeChar
+                extern _exit
+                extern readInt
+                extern readChar
+                section .data
+                    ALIGN 8
+                """);
+        for (String global : globals) {
+            code.append(format("    %s dq 0\n", global));
+        }
+        code.append("""
+                section .text
+                global _start
+                        """);
+        program.visitFunctions(this);
+        program.visitStructs(this);
     }
 
     @Override
     public void visit(final Function procedure) {
+        currentScope = procedure.getIdentifier();
         super.visit(procedure);
         if ("main".equals(procedure.getIdentifier())) {
             code.append("""
-                                _start:
-                                """);
+                    _start:
+                    """);
         }
         code.append("""
-                                push rbp ; save rbp of previous subroutine call on stack
-                                mov rbp, rsp ; replace current base pointer with stack pointer
-                            """);
+                    push rbp ; save rbp of previous subroutine call on stack
+                    mov rbp, rsp ; replace current base pointer with stack pointer
+                """);
 
-        int stackSize = localsMap.size() * 8;
+        int stackSize = scopes.size() * 8;
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(format("    sub rsp, %d\n", stackSize));
 
@@ -86,15 +110,15 @@ public class CodeGenerator extends BaseAstVisitor {
 
         if ("main".equals(procedure.getIdentifier())) {
             code.append("""
-                                exit:
-                                    mov rdi, 0
-                                    call _exit
-                                 """);
+                    exit:
+                        mov rdi, 0
+                        call _exit
+                     """);
         }
         code.append("""
-                                mov rsp, rbp
-                                pop rbp
-                            """);
+                    mov rsp, rbp
+                    pop rbp
+                """);
     }
 
     @Override
@@ -106,12 +130,12 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final Declaration declaration) {
-        addLocal(declaration.getIdentifier());
+        addVariable(declaration.getIdentifier());
     }
 
     @Override
     public void visit(final VariableAccess variable) {
-        expressions.push(format("[rbp-%d]", localsMap.get(variable.getIdentifier()) * 8));
+        expressions.push(getVariable(variable.getIdentifier()));
     }
 
     @Override
@@ -199,14 +223,14 @@ public class CodeGenerator extends BaseAstVisitor {
                     }
                 }
                 statements.add("""
-                                           jmp ._false
-                                       ._true:
-                                           mov rax, 1
-                                           jmp ._boolEnd
-                                       ._false:
-                                           mov rax, 0
-                                       ._boolEnd:
-                                       """);
+                            jmp ._false
+                        ._true:
+                            mov rax, 1
+                            jmp ._boolEnd
+                        ._false:
+                            mov rax, 0
+                        ._boolEnd:
+                        """);
             }
             case AND -> {
                 throw new UnsupportedOperationException();
