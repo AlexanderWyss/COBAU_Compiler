@@ -62,10 +62,36 @@ public class CodeGenerator extends BaseAstVisitor {
         return format("qword[%s]", identifier); // global
     }
 
+    private String formatIndented(String statement, Object... args) {
+        StringBuilder formatted = new StringBuilder();
+        final String[] lines = format(statement, args).split("\n");
+        for (String line : lines) {
+            formatted.append(format("    %s\n", line.strip()));
+        }
+        return formatted.toString();
+    }
+
+    private void addIndented(String statement, Object... args) {
+        statements.add(formatIndented(statement, args));
+    }
+
+    private String formatUnindented(String statement, Object... args) {
+        StringBuilder formatted = new StringBuilder();
+        final String[] lines = format(statement, args).split("\n");
+        for (String line : lines) {
+            formatted.append(format("%s\n", line));
+        }
+        return formatted.toString();
+    }
+
+    private void add(String statement, Object... args) {
+        statements.add(formatUnindented(statement, args));
+    }
+
     @Override
     public void visit(final Unit program) {
         program.visitDeclarations(this);
-        code.append("""
+        code.append(formatUnindented("""
                 DEFAULT REL
                 extern writeInt
                 extern writeChar
@@ -74,14 +100,14 @@ public class CodeGenerator extends BaseAstVisitor {
                 extern readChar
                 section .data
                     ALIGN 8
-                """);
+                """));
         for (String global : globals) {
-            code.append(format("    %s dq 0\n", global));
+            code.append(formatIndented("%s dq 0", global));
         }
-        code.append("""
+        code.append(formatUnindented("""
                 section .text
                 global _start
-                        """);
+                        """));
         program.visitFunctions(this);
         program.visitStructs(this);
     }
@@ -91,41 +117,39 @@ public class CodeGenerator extends BaseAstVisitor {
         currentScope = procedure.getIdentifier();
         super.visit(procedure);
         if ("main".equals(procedure.getIdentifier())) {
-            code.append("""
-                    _start:
-                    """);
+            code.append(formatUnindented("_start:"));
         }
-        code.append("""
-                    push rbp ; save rbp of previous subroutine call on stack
-                    mov rbp, rsp ; replace current base pointer with stack pointer
-                """);
+        code.append(formatIndented("""
+                push rbp
+                mov rbp, rsp
+                """));
 
         int stackSize = scopes.size() * 8;
         stackSize += stackSize % 16; // align to 16 bytes
-        code.append(format("    sub rsp, %d\n", stackSize));
+        code.append(formatIndented("sub rsp, %d", stackSize));
 
         while (!statements.isEmpty()) {
             code.append(statements.poll());
         }
 
         if ("main".equals(procedure.getIdentifier())) {
-            code.append("""
+            code.append(formatUnindented("""
                     exit:
                         mov rdi, 0
                         call _exit
-                     """);
+                     """));
         }
-        code.append("""
-                    mov rsp, rbp
-                    pop rbp
-                """);
+        code.append(formatIndented("""
+                mov rsp, rbp
+                pop rbp
+                """));
     }
 
     @Override
     public void visit(final CallExpression callExpression) {
         super.visit(callExpression);
-        statements.add(format("    mov rdi, %s\n", expressions.pop()));
-        statements.add(format("    call %s\n", callExpression.getIdentifier()));
+        addIndented("mov rdi, %s", expressions.pop());
+        addIndented("call %s", callExpression.getIdentifier());
     }
 
     @Override
@@ -144,14 +168,14 @@ public class CodeGenerator extends BaseAstVisitor {
         int ifCount = ifLabels++;
         String ifLabel = format("if%d", ifCount);
         String endIfLabel = format("endIf%d", ifCount);
-        statements.add(format("    mov rax, %s\n", expressions.pop()));
-        statements.add("    cmp rax, 0\n");
-        statements.add(format("    je %s\n", ifLabel));
+        addIndented("mov rax, %s", expressions.pop());
+        addIndented("cmp rax, 0");
+        addIndented("je %s", ifLabel);
         ifStatement.visitBlock(this);
-        statements.add(format("    jmp %s\n", endIfLabel));
-        statements.add(format("%s:\n", ifLabel));
+        addIndented("jmp %s", endIfLabel);
+        add("%s:", ifLabel);
         ifStatement.visitElse(this);
-        statements.add(format("%s:\n", endIfLabel));
+        add("%s:", endIfLabel);
     }
 
     @Override
@@ -159,14 +183,14 @@ public class CodeGenerator extends BaseAstVisitor {
         int whileCount = whileLabels++;
         String whileLabel = format("while%d", whileCount);
         String endWhileLabel = format("endWhile%d", whileCount);
-        statements.add(format("    jmp %s\n", endWhileLabel));
-        statements.add(format("%s:\n", whileLabel));
+        addIndented("jmp %s", endWhileLabel);
+        add("%s:", whileLabel);
         whileStatement.visitBlock(this);
-        statements.add(format("%s:\n", endWhileLabel));
+        add("%s:", endWhileLabel);
         whileStatement.visitExpression(this);
-        statements.add(format("    mov rax, %s\n", expressions.pop()));
-        statements.add("    cmp rax, 1\n");
-        statements.add(format("    je %s\n", whileLabel));
+        addIndented("mov rax, %s", expressions.pop());
+        addIndented("cmp rax, 1");
+        addIndented("je %s", whileLabel);
     }
 
     @Override
@@ -174,7 +198,7 @@ public class CodeGenerator extends BaseAstVisitor {
         super.visit(assignment);
         String right = expressions.pop();
         String left = expressions.pop();
-        statements.add(format("    mov qword %s, %s\n", left, right));
+        addIndented("mov qword %s, %s", left, right);
     }
 
     @Override
@@ -182,13 +206,13 @@ public class CodeGenerator extends BaseAstVisitor {
         super.visit(binaryExpression);
         String right = expressions.pop();
         String left = expressions.pop();
-        statements.add(format("    mov rax, %s\n", left));
+        addIndented("mov rax, %s", left);
         switch (binaryExpression.getBinaryOperator()) {
             case PLUS -> {
-                statements.add(format("    add rax, %s\n", right));
+                addIndented("add rax, %s", right);
             }
             case MINUS -> {
-                statements.add(format("    sub rax, %s\n", right));
+                addIndented("sub rax, %s", right);
             }
             case TIMES -> {
                 throw new UnsupportedOperationException();
@@ -200,29 +224,29 @@ public class CodeGenerator extends BaseAstVisitor {
                 throw new UnsupportedOperationException();
             }
             case EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
-                statements.add(format("compare%d:\n", cmpLabels++));
-                statements.add(format("    cmp rax, %s\n", right));
+                add("compare%d:", cmpLabels++);
+                addIndented("cmp rax, %s", right);
                 switch (binaryExpression.getBinaryOperator()) {
                     case EQUAL -> {
-                        statements.add("    je ._true\n");
+                        addIndented("je ._true");
                     }
                     case UNEQUAL -> {
-                        statements.add("    jne ._true\n");
+                        addIndented("jne ._true");
                     }
                     case LESSER -> {
-                        statements.add("    jl ._true\n");
+                        addIndented("jl ._true");
                     }
                     case LESSER_EQ -> {
-                        statements.add("    jle ._true\n");
+                        addIndented("jle ._true");
                     }
                     case GREATER -> {
-                        statements.add("    jg ._true\n");
+                        addIndented("jg ._true");
                     }
                     case GREATER_EQ -> {
-                        statements.add("    jge ._true\n");
+                        addIndented("jge ._true");
                     }
                 }
-                statements.add("""
+                add("""
                             jmp ._false
                         ._true:
                             mov rax, 1
