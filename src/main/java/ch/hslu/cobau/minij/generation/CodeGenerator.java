@@ -210,10 +210,8 @@ public class CodeGenerator extends BaseAstVisitor {
                 } else {
                     if (formalParam.isReference()) {
                         popReference("rax");
-                    } else {
-                        pop("rax");
+                        push("rax");
                     }
-                    push("rax");
                     pushCount++;
                 }
             }

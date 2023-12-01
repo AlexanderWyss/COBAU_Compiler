@@ -3,6 +3,9 @@ package ch.hslu.cobau.minij;
 import ch.hslu.cobau.minij.ast.AstBuilder;
 import ch.hslu.cobau.minij.ast.entity.Unit;
 import ch.hslu.cobau.minij.generation.CodeGenerator;
+import ch.hslu.cobau.minij.generation.MovOptimizer;
+import ch.hslu.cobau.minij.generation.Optimizer;
+import ch.hslu.cobau.minij.generation.PushPopOptimizer;
 import ch.hslu.cobau.minij.symboltable.SymbolTable;
 import ch.hslu.cobau.minij.symboltable.SymbolTableBuilder;
 import org.antlr.v4.runtime.CharStream;
@@ -11,8 +14,12 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 
 public class MiniJCompiler {
+
+    private static final List<Optimizer> OPTIMIZERS = List.of(new PushPopOptimizer(), new MovOptimizer());
+
 
     public static void main(String[] args) throws IOException {
         // initialize lexer and parser
@@ -27,7 +34,7 @@ public class MiniJCompiler {
     }
 
     public boolean run(CharStream in) {
-        return run(in, System.out);
+        return run(in, System.out, true);
     }
 
     /**
@@ -37,7 +44,7 @@ public class MiniJCompiler {
      * @param out the generated asm
      * @return true if it was successfully compiled, false otherwise
      */
-    public boolean run(CharStream in, PrintStream out) {
+    public boolean run(CharStream in, PrintStream out, boolean optimize) {
         final MiniJLexer miniJLexer = new MiniJLexer(in);
         final CommonTokenStream commonTokenStream = new CommonTokenStream(miniJLexer);
         final MiniJParser miniJParser = new MiniJParser(commonTokenStream);
@@ -67,7 +74,14 @@ public class MiniJCompiler {
             if (!errorListener.hasErrors()) {
                 final CodeGenerator codeGenerator = new CodeGenerator(symbolTable);
                 unit.accept(codeGenerator);
-                out.print(codeGenerator.getCode());
+
+                String code = codeGenerator.getCode();
+                if (optimize) {
+                    for (Optimizer optimizer : OPTIMIZERS) {
+                        code = optimizer.optimize(code);
+                    }
+                }
+                out.print(code);
             }
         }
 
