@@ -25,7 +25,6 @@ public class CodeGenerator extends BaseAstVisitor {
     private final Deque<String> statements = new ArrayDeque<>();
     private int ifLabels = 0;
     private int whileLabels = 0;
-    private int cmpLabels = 0;
 
     private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
@@ -256,7 +255,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 addIndented("sub rax, %s", right);
             }
             case TIMES -> {
-                throw new UnsupportedOperationException();
+                addIndented("imul rax, %s", right);
             }
             case DIV -> {
                 throw new UnsupportedOperationException();
@@ -265,38 +264,28 @@ public class CodeGenerator extends BaseAstVisitor {
                 throw new UnsupportedOperationException();
             }
             case EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
-                // TODO this is kinda stupid
-                add("compare%d:", cmpLabels++);
                 addIndented("cmp rax, %s", right);
                 switch (binaryExpression.getBinaryOperator()) {
                     case EQUAL -> {
-                        addIndented("je ._true");
+                        addIndented("sete al");
                     }
                     case UNEQUAL -> {
-                        addIndented("jne ._true");
+                        addIndented("setne al");
                     }
                     case LESSER -> {
-                        addIndented("jl ._true");
+                        addIndented("setl al");
                     }
                     case LESSER_EQ -> {
-                        addIndented("jle ._true");
+                        addIndented("setle al");
                     }
                     case GREATER -> {
-                        addIndented("jg ._true");
+                        addIndented("setg al");
                     }
                     case GREATER_EQ -> {
-                        addIndented("jge ._true");
+                        addIndented("setge al");
                     }
                 }
-                add("""
-                            jmp ._false
-                        ._true:
-                            mov rax, 1
-                            jmp ._boolEnd
-                        ._false:
-                            mov rax, 0
-                        ._boolEnd:
-                        """);
+                addIndented("movsx rax, al");
             }
             case AND -> {
                 throw new UnsupportedOperationException();
