@@ -21,7 +21,7 @@ public class CodeGenerator extends BaseAstVisitor {
     private String currentScope = null;
     private final Map<String, Map<String, Integer>> scopes = new HashMap<>();
     private final Set<String> globals = new HashSet<>();
-    private final Deque<String> expressions = new LinkedList<>();
+    private final Stack<Boolean> expressionByReference = new Stack<>();
     private final Deque<String> statements = new ArrayDeque<>();
     private int ifLabels = 0;
     private int whileLabels = 0;
@@ -80,6 +80,30 @@ public class CodeGenerator extends BaseAstVisitor {
         statements.add(formatUnindented(statement, args));
     }
 
+    private void pushReference(String register) {
+        addIndented("push %s", register);
+        expressionByReference.add(true);
+    }
+
+    private void push(String register) {
+        addIndented("push %s", register);
+        expressionByReference.add(false);
+    }
+
+    private void pop(String register) {
+        addIndented("pop %s", register);
+        if (expressionByReference.pop()) {
+            addIndented("mov %s, [%s]", register, register);
+        }
+    }
+
+    private void popReference(String register) {
+        addIndented("pop %s", register);
+        if (!expressionByReference.pop()) {
+            throw new UnsupportedOperationException("Not a reference");
+        }
+    }
+
     @Override
     public void visit(final Unit program) {
         program.visitDeclarations(this);
@@ -122,7 +146,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 mov rbp, rsp
                 """));
 
-        int stackSize = scopes.size() * 8;
+        int stackSize = getLocals().size() * 8;
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(formatIndented("sub rsp, %d", stackSize));
 
@@ -152,8 +176,8 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final ReturnStatement returnStatement) {
         super.visit(returnStatement);
-        if (!expressions.isEmpty()) {
-            addIndented("mov rax, %s", expressions.pop());
+        if (returnStatement.getExpression() != null) {
+            pop("rax");
         }
         addIndented("jmp _%sEnd", currentScope);
     }
@@ -161,28 +185,26 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final CallExpression callExpression) {
-        super.visit(callExpression);
         for (int i = 0; i < callExpression.getParameters().size(); i++) {
+            callExpression.getParameters().get(i).accept(this);
             if (i < PARAM_REGISTERS.size()) {
-                addIndented("mov %s, %s", PARAM_REGISTERS.get(i), expressions.removeLast());
+                pop(PARAM_REGISTERS.get(i));
             } else {
-                addIndented("""
-                        mov rax, %s
-                        push rax
-                        """, expressions.removeLast());
+                pop("rax");
+                push("rax");
             }
         }
         addIndented("call %s", callExpression.getIdentifier());
         for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
-            addIndented("pop rdi");
+            pop("rdi");
         }
-        expressions.push("rax");
+        push("rax");
     }
 
     @Override
     public void visit(CallStatement callStatement) {
         super.visit(callStatement);
-        expressions.pop(); // unused return value from CallExpression
+        pop("rax"); // unused return value from CallExpression
     }
 
     @Override
@@ -199,7 +221,8 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final VariableAccess variable) {
-        expressions.push(getVariable(variable.getIdentifier()));
+        addIndented("lea rax, %s", getVariable(variable.getIdentifier()));
+        pushReference("rax");
     }
 
     @Override
@@ -208,7 +231,7 @@ public class CodeGenerator extends BaseAstVisitor {
         int ifCount = ifLabels++;
         String ifLabel = format("if%d", ifCount);
         String endIfLabel = format("endIf%d", ifCount);
-        addIndented("mov rax, %s", expressions.pop());
+        pop("rax");
         addIndented("cmp rax, 0");
         addIndented("je %s", ifLabel);
         ifStatement.visitBlock(this);
@@ -228,7 +251,7 @@ public class CodeGenerator extends BaseAstVisitor {
         whileStatement.visitBlock(this);
         add("%s:", endWhileLabel);
         whileStatement.visitExpression(this);
-        addIndented("mov rax, %s", expressions.pop());
+        pop("rax");
         addIndented("cmp rax, 1");
         addIndented("je %s", whileLabel);
     }
@@ -236,26 +259,25 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final AssignmentStatement assignment) {
         super.visit(assignment);
-        String right = expressions.pop();
-        String left = expressions.pop();
-        addIndented("mov qword %s, %s", left, right);
+        pop("rbx");
+        popReference("rax");
+        addIndented("mov [rax], rbx");
     }
 
     @Override
     public void visit(final BinaryExpression binaryExpression) {
         super.visit(binaryExpression);
-        String right = expressions.pop();
-        String left = expressions.pop();
-        addIndented("mov rax, %s", left);
+        pop("rbx");
+        pop("rax");
         switch (binaryExpression.getBinaryOperator()) {
             case PLUS -> {
-                addIndented("add rax, %s", right);
+                addIndented("add rax, rbx");
             }
             case MINUS -> {
-                addIndented("sub rax, %s", right);
+                addIndented("sub rax, rbx");
             }
             case TIMES -> {
-                addIndented("imul rax, %s", right);
+                addIndented("imul rax, rbx");
             }
             case DIV -> {
                 throw new UnsupportedOperationException();
@@ -264,7 +286,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 throw new UnsupportedOperationException();
             }
             case EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
-                addIndented("cmp rax, %s", right);
+                addIndented("cmp rax, rbx");
                 switch (binaryExpression.getBinaryOperator()) {
                     case EQUAL -> {
                         addIndented("sete al");
@@ -294,25 +316,25 @@ public class CodeGenerator extends BaseAstVisitor {
                 throw new UnsupportedOperationException();
             }
         }
-        expressions.push("rax");
+        push("rax");
     }
 
     @Override
     public void visit(final IntegerConstant integerConstant) {
-        super.visit(integerConstant);
-        expressions.push(format("%d", integerConstant.getValue()));
+        addIndented("mov rax, %d", integerConstant.getValue());
+        push("rax");
     }
 
     @Override
     public void visit(final FalseConstant falseConstant) {
-        super.visit(falseConstant);
-        expressions.push("0");
+        addIndented("mov rax, 0");
+        push("rax");
     }
 
     @Override
     public void visit(final TrueConstant trueConstant) {
-        super.visit(trueConstant);
-        expressions.push("1");
+        addIndented("mov rax, 1");
+        push("rax");
     }
 
     @Override
