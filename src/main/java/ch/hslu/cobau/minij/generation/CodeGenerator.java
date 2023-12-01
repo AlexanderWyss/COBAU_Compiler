@@ -3,7 +3,6 @@ package ch.hslu.cobau.minij.generation;
 import ch.hslu.cobau.minij.ast.BaseAstVisitor;
 import ch.hslu.cobau.minij.ast.constants.FalseConstant;
 import ch.hslu.cobau.minij.ast.constants.IntegerConstant;
-import ch.hslu.cobau.minij.ast.constants.StringConstant;
 import ch.hslu.cobau.minij.ast.constants.TrueConstant;
 import ch.hslu.cobau.minij.ast.entity.Declaration;
 import ch.hslu.cobau.minij.ast.entity.Function;
@@ -11,6 +10,8 @@ import ch.hslu.cobau.minij.ast.entity.Struct;
 import ch.hslu.cobau.minij.ast.entity.Unit;
 import ch.hslu.cobau.minij.ast.expression.*;
 import ch.hslu.cobau.minij.ast.statement.*;
+import ch.hslu.cobau.minij.ast.type.RecordType;
+import ch.hslu.cobau.minij.ast.type.Type;
 import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.*;
@@ -118,7 +119,6 @@ public class CodeGenerator extends BaseAstVisitor {
                     call _exit
                         """));
         program.visitFunctions(this);
-        program.visitStructs(this);
     }
 
     @Override
@@ -144,6 +144,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 code.append(formatIndented("mov [rbp-%d], rax", locals.get(procedure.getFormalParameters().get(i).getIdentifier()) * 8));
             }
         }
+        // TODO read records
         // TODO init local vars 0
 
         while (!statements.isEmpty()) {
@@ -189,6 +190,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 push("rax");
             }
         }
+        // TODO pass records
         addIndented("call %s", callExpression.getIdentifier());
         for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
             pop("rdi");
@@ -211,18 +213,27 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final Declaration declaration) {
-        addVariable(declaration.getIdentifier());
-    }
-
-    private void addVariable(String identifier) {
+        String identifier = declaration.getIdentifier();
         if (currentScope != null) {
             final Map<String, Integer> locals = getLocals();
             int position = (locals.size() + 1);
             if (!locals.containsKey(identifier)) {
                 locals.put(identifier, position);
+                if (declaration.getType() instanceof RecordType) {
+                    Struct recordType = symbolTable.getRecordType(((RecordType) declaration.getType()).getIdentifier());
+                    for (Declaration recordTypeDeclaration : recordType.getDeclarations()) {
+                        locals.put(format("%s.%s", identifier, recordTypeDeclaration.getIdentifier()), ++position);
+                    }
+                }
             }
         } else {
             globals.add(identifier);
+            if (declaration.getType() instanceof RecordType) {
+                Struct recordType = symbolTable.getRecordType(((RecordType) declaration.getType()).getIdentifier());
+                for (Declaration recordTypeDeclaration : recordType.getDeclarations()) {
+                    globals.add(format("%s.%s", identifier, recordTypeDeclaration.getIdentifier()));
+                }
+            }
         }
     }
 
@@ -247,6 +258,18 @@ public class CodeGenerator extends BaseAstVisitor {
             }
         }
         return format("qword[%s]", identifier); // global
+    }
+
+    @Override
+    public void visit(final FieldAccess fieldAccess) {
+        super.visit(fieldAccess);
+        Type resultType = fieldAccess.getBase().getResultType(symbolTable, symbolTable.getScope(currentScope));
+        assert resultType instanceof RecordType;
+        Struct record = symbolTable.getRecordType(((RecordType) resultType).getIdentifier());
+        int index = record.getDeclarations().stream().map(Declaration::getIdentifier).toList().indexOf(fieldAccess.getField());
+        popReference("rax");
+        addIndented("lea rax, [rax-%d]", (index + 1) * 8);
+        pushReference("rax");
     }
 
     @Override
@@ -283,9 +306,20 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final AssignmentStatement assignment) {
         super.visit(assignment);
-        pop("rbx");
-        popReference("rax");
-        addIndented("mov [rax], rbx");
+        Type resultType = assignment.getRight().getResultType(symbolTable, symbolTable.getScope(currentScope));
+        if (resultType instanceof RecordType) {
+            Struct record = symbolTable.getRecordType(((RecordType) resultType).getIdentifier());
+            popReference("rbx");
+            popReference("rax");
+            List<Declaration> declarations = record.getDeclarations();
+            for (int i = 0; i < declarations.size(); i++) {
+                addIndented("mov [rax-%d], [rbx-%d]", (i + 1) * 8);
+            }
+        } else {
+            pop("rbx");
+            popReference("rax");
+            addIndented("mov [rax], rbx");
+        }
     }
 
     @Override
@@ -404,31 +438,6 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final TrueConstant trueConstant) {
         addIndented("mov rax, 1");
         push("rax");
-    }
-
-    @Override
-    public void visit(final Struct recordStructure) {
-        super.visit(recordStructure);
-    }
-
-    @Override
-    public void visit(final Block block) {
-        super.visit(block);
-    }
-
-    @Override
-    public void visit(final ArrayAccess arrayAccess) {
-        super.visit(arrayAccess);
-    }
-
-    @Override
-    public void visit(final FieldAccess fieldAccess) {
-        super.visit(fieldAccess);
-    }
-
-    @Override
-    public void visit(final StringConstant stringConstant) {
-        super.visit(stringConstant);
     }
 
     public String getCode() {
