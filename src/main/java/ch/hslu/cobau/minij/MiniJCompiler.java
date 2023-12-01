@@ -63,14 +63,14 @@ public class MiniJCompiler {
                 final TypeChecker typeChecker = new TypeChecker(errorListener, symbolTable);
                 unit.accept(typeChecker);
             }
+            // code generation (milestone 4)
+            if (!errorListener.hasErrors()) {
+                final CodeGenerator codeGenerator = new CodeGenerator(symbolTable);
+                unit.accept(codeGenerator);
+                out.print(codeGenerator.getCode());
+            }
         }
 
-        // code generation (milestone 4)
-        if (!errorListener.hasErrors()) {
-            final CodeGenerator codeGenerator = new CodeGenerator();
-            unit.accept(codeGenerator);
-            out.print(codeGenerator.getCode());
-        }
 
         return !errorListener.hasErrors();
     }

@@ -36,7 +36,7 @@ public class MiniJCompilerTest {
             if (addLines) {
                 String[] lines = s.split("\n");
                 for (int i = 0; i < lines.length; i++) {
-                    super.print(String.format("%d. %s\n", i + 1, lines[i]));
+                    super.printf("%d. %s\n", i + 1, lines[i]);
                 }
             } else {
                 super.print(s);

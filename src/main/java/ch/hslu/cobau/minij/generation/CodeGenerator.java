@@ -11,6 +11,7 @@ import ch.hslu.cobau.minij.ast.entity.Struct;
 import ch.hslu.cobau.minij.ast.entity.Unit;
 import ch.hslu.cobau.minij.ast.expression.*;
 import ch.hslu.cobau.minij.ast.statement.*;
+import ch.hslu.cobau.minij.symboltable.SymbolTable;
 
 import java.util.*;
 
@@ -18,6 +19,7 @@ import static java.lang.String.format;
 
 public class CodeGenerator extends BaseAstVisitor {
     private final StringBuilder code = new StringBuilder();
+    private final SymbolTable symbolTable;
     private String currentScope = null;
     private final Map<String, Map<String, Integer>> scopes = new HashMap<>();
     private final Set<String> globals = new HashSet<>();
@@ -29,30 +31,12 @@ public class CodeGenerator extends BaseAstVisitor {
 
     private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
+    public CodeGenerator(SymbolTable symbolTable) {
+        this.symbolTable = symbolTable;
+    }
+
     private Map<String, Integer> getLocals() {
         return scopes.computeIfAbsent(currentScope, ident -> new HashMap<>());
-    }
-
-    private void addVariable(String identifier) {
-        if (currentScope != null) {
-            final Map<String, Integer> locals = getLocals();
-            int position = (locals.size() + 1);
-            if (!locals.containsKey(identifier)) {
-                locals.put(identifier, position);
-            }
-        } else {
-            globals.add(identifier);
-        }
-    }
-
-    private String getVariable(String identifier) {
-        if (currentScope != null) {
-            final Map<String, Integer> locals = getLocals();
-            if (locals.containsKey(identifier)) {
-                return format("[rbp-%d]", locals.get(identifier) * 8);
-            }
-        }
-        return format("qword[%s]", identifier); // global
     }
 
     private String formatIndented(String statement, Object... args) {
@@ -147,16 +131,17 @@ public class CodeGenerator extends BaseAstVisitor {
                 mov rbp, rsp
                 """));
 
-        int stackSize = getLocals().size() * 8;
+        Map<String, Integer> locals = getLocals();
+        int stackSize = locals.size() * 8;
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(formatIndented("sub rsp, %d", stackSize));
 
         for (int i = 0; i < procedure.getFormalParameters().size(); i++) {
             if (i < PARAM_REGISTERS.size()) {
-                code.append(formatIndented("mov %s, %s", getVariable(procedure.getFormalParameters().get(i).getIdentifier()), PARAM_REGISTERS.get(i)));
+                code.append(formatIndented("mov [rbp-%d], %s", locals.get(procedure.getFormalParameters().get(i).getIdentifier()) * 8, PARAM_REGISTERS.get(i)));
             } else {
                 code.append(formatIndented("mov rax, [rbp+%d]", (i - PARAM_REGISTERS.size()) * 8 + 16));
-                code.append(formatIndented("mov %s, rax", getVariable(procedure.getFormalParameters().get(i).getIdentifier())));
+                code.append(formatIndented("mov [rbp-%d], rax", locals.get(procedure.getFormalParameters().get(i).getIdentifier()) * 8));
             }
         }
         // TODO init local vars 0
@@ -186,12 +171,21 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final CallExpression callExpression) {
+        List<Declaration> formalParameters = symbolTable.getFunction(callExpression.getIdentifier()).getFormalParameters();
         for (int i = 0; i < callExpression.getParameters().size(); i++) {
             callExpression.getParameters().get(i).accept(this);
             if (i < PARAM_REGISTERS.size()) {
-                pop(PARAM_REGISTERS.get(i));
+                if (formalParameters.get(i).isReference()) {
+                    popReference(PARAM_REGISTERS.get(i));
+                } else {
+                    pop(PARAM_REGISTERS.get(i));
+                }
             } else {
-                pop("rax");
+                if (formalParameters.get(i).isReference()) {
+                    popReference("rax");
+                } else {
+                    pop("rax");
+                }
                 push("rax");
             }
         }
@@ -220,10 +214,39 @@ public class CodeGenerator extends BaseAstVisitor {
         addVariable(declaration.getIdentifier());
     }
 
+    private void addVariable(String identifier) {
+        if (currentScope != null) {
+            final Map<String, Integer> locals = getLocals();
+            int position = (locals.size() + 1);
+            if (!locals.containsKey(identifier)) {
+                locals.put(identifier, position);
+            }
+        } else {
+            globals.add(identifier);
+        }
+    }
+
+
     @Override
     public void visit(final VariableAccess variable) {
-        addIndented("lea rax, %s", getVariable(variable.getIdentifier()));
+        String identifier = variable.getIdentifier();
+        Optional<Declaration> formalParam = symbolTable.getFunction(currentScope).getFormalParameters().stream().filter(param -> param.getIdentifier().equals(identifier)).findFirst();
+        if (formalParam.isPresent() && formalParam.get().isReference()) {
+            addIndented("mov rax, %s", getVariable(identifier));
+        } else {
+            addIndented("lea rax, %s", getVariable(identifier));
+        }
         pushReference("rax");
+    }
+
+    private String getVariable(String identifier) {
+        if (currentScope != null) {
+            final Map<String, Integer> locals = getLocals();
+            if (locals.containsKey(identifier)) {
+                return format("[rbp-%d]", locals.get(identifier) * 8);
+            }
+        }
+        return format("qword[%s]", identifier); // global
     }
 
     @Override
