@@ -25,6 +25,7 @@ public class CodeGenerator extends BaseAstVisitor {
     private final Deque<String> statements = new ArrayDeque<>();
     private int ifLabels = 0;
     private int whileLabels = 0;
+    private int boolLabels = 0;
 
     private static final List<String> PARAM_REGISTERS = List.of("RDI", "RSI", "RDX", "RCX", "R8", "R9");
 
@@ -229,8 +230,8 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final IfStatement ifStatement) {
         ifStatement.visitExpression(this);
         int ifCount = ifLabels++;
-        String ifLabel = format("if%d", ifCount);
-        String endIfLabel = format("endIf%d", ifCount);
+        String ifLabel = format("_if%d", ifCount);
+        String endIfLabel = format("_endIf%d", ifCount);
         pop("rax");
         addIndented("cmp rax, 0");
         addIndented("je %s", ifLabel);
@@ -244,8 +245,8 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final WhileStatement whileStatement) {
         int whileCount = whileLabels++;
-        String whileLabel = format("while%d", whileCount);
-        String endWhileLabel = format("endWhile%d", whileCount);
+        String whileLabel = format("_while%d", whileCount);
+        String endWhileLabel = format("_endWhile%d", whileCount);
         addIndented("jmp %s", endWhileLabel);
         add("%s:", whileLabel);
         whileStatement.visitBlock(this);
@@ -266,57 +267,102 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final BinaryExpression binaryExpression) {
-        super.visit(binaryExpression);
-        pop("rbx");
-        pop("rax");
         switch (binaryExpression.getBinaryOperator()) {
-            case PLUS -> {
-                addIndented("add rax, rbx");
-            }
-            case MINUS -> {
-                addIndented("sub rax, rbx");
-            }
-            case TIMES -> {
-                addIndented("imul rax, rbx");
-            }
-            case DIV -> {
-                throw new UnsupportedOperationException();
-            }
-            case MOD -> {
-                throw new UnsupportedOperationException();
-            }
-            case EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
-                addIndented("cmp rax, rbx");
+            case PLUS, MINUS, TIMES, DIV, MOD, EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
+                super.visit(binaryExpression);
+                pop("rbx");
+                pop("rax");
                 switch (binaryExpression.getBinaryOperator()) {
-                    case EQUAL -> {
-                        addIndented("sete al");
+                    case PLUS -> addIndented("add rax, rbx");
+                    case MINUS -> addIndented("sub rax, rbx");
+                    case TIMES -> addIndented("imul rax, rbx");
+                    case DIV, MOD -> {
+                        addIndented("""
+                                mov rdx, 0
+                                cqo
+                                idiv rbx
+                                """);
+                        if (BinaryOperator.MOD.equals(binaryExpression.getBinaryOperator())) {
+                            addIndented("mov rax, rdx");
+                        }
                     }
-                    case UNEQUAL -> {
-                        addIndented("setne al");
-                    }
-                    case LESSER -> {
-                        addIndented("setl al");
-                    }
-                    case LESSER_EQ -> {
-                        addIndented("setle al");
-                    }
-                    case GREATER -> {
-                        addIndented("setg al");
-                    }
-                    case GREATER_EQ -> {
-                        addIndented("setge al");
+                    default -> {
+                        addIndented("cmp rax, rbx");
+                        switch (binaryExpression.getBinaryOperator()) {
+                            case EQUAL -> addIndented("sete al");
+                            case UNEQUAL -> addIndented("setne al");
+                            case LESSER -> addIndented("setl al");
+                            case LESSER_EQ -> addIndented("setle al");
+                            case GREATER -> addIndented("setg al");
+                            case GREATER_EQ -> addIndented("setge al");
+                        }
+                        addIndented("movsx rax, al");
                     }
                 }
-                addIndented("movsx rax, al");
             }
-            case AND -> {
-                throw new UnsupportedOperationException();
+            case AND, OR -> {
+                String boolLabel = format("_bool%d", boolLabels++);
+                binaryExpression.getLeft().accept(this);
+                pop("rax");
+                switch (binaryExpression.getBinaryOperator()) {
+                    case AND -> addIndented("""
+                            cmp rax, 0
+                            je %s
+                            """, boolLabel);
+                    case OR -> addIndented("""
+                            cmp rax, 1
+                            je %s
+                            """, boolLabel);
+                }
+                binaryExpression.getRight().accept(this);
+                pop("rax");
+                add("%s:", boolLabel);
+                addIndented("""
+                        cmp rax, 1
+                        sete al
+                        movsx rax, al
+                        """);
             }
-            case OR -> {
-                throw new UnsupportedOperationException();
-            }
+
         }
         push("rax");
+    }
+
+    @Override
+    public void visit(final UnaryExpression unaryExpression) {
+        super.visit(unaryExpression);
+        switch (unaryExpression.getUnaryOperator()) {
+            case MINUS -> {
+                pop("rax");
+                addIndented("neg rax");
+                push("rax");
+            }
+            case NOT -> {
+                pop("rax");
+                addIndented("xor rax, 1");
+                push("rax");
+            }
+            case PRE_INCREMENT -> {
+                popReference("rax");
+                addIndented("add qword [rax], 1");
+                pushReference("rax");
+            }
+            case PRE_DECREMENT -> {
+                popReference("rax");
+                addIndented("sub qword [rax], 1");
+                pushReference("rax");
+            }
+            case POST_INCREMENT -> {
+                popReference("rax");
+                push("qword [rax]");
+                addIndented("add qword [rax], 1");
+            }
+            case POST_DECREMENT -> {
+                popReference("rax");
+                push("qword [rax]");
+                addIndented("sub qword [rax], 1");
+            }
+        }
     }
 
     @Override
@@ -345,11 +391,6 @@ public class CodeGenerator extends BaseAstVisitor {
     @Override
     public void visit(final Block block) {
         super.visit(block);
-    }
-
-    @Override
-    public void visit(final UnaryExpression unaryExpression) {
-        super.visit(unaryExpression);
     }
 
     @Override
