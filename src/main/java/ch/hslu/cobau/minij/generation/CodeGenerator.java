@@ -136,15 +136,34 @@ public class CodeGenerator extends BaseAstVisitor {
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(formatIndented("sub rsp, %d", stackSize));
 
-        for (int i = 0; i < procedure.getFormalParameters().size(); i++) {
-            if (i < PARAM_REGISTERS.size()) {
-                code.append(formatIndented("mov [rbp-%d], %s", locals.get(procedure.getFormalParameters().get(i).getIdentifier()) * 8, PARAM_REGISTERS.get(i)));
+        List<Integer> nonStructIndexes = new ArrayList<>();
+        List<Declaration> formalParameters = procedure.getFormalParameters();
+        int popCount = 0;
+        for (int i = 0; i < formalParameters.size(); i++) {
+            Declaration formalParam = formalParameters.get(i);
+            if (formalParam.getType() instanceof RecordType && !formalParam.isReference()) {
+                Struct record = symbolTable.getRecordType(((RecordType) formalParam.getType()).getIdentifier());
+                List<Declaration> recordDeclarations = record.getDeclarations();
+                for (int declarationIndex = recordDeclarations.size() - 1; declarationIndex >= 0; declarationIndex--) {
+                    Declaration recordDeclaration = recordDeclarations.get(declarationIndex);
+                    code.append(formatIndented("mov rax, [rbp+%d]", popCount * 8 + 16));
+                    code.append(formatIndented("mov [rbp-%d], rax", locals.get(format("%s.%s", formalParam.getIdentifier(), recordDeclaration.getIdentifier())) * 8));
+                    popCount++;
+                }
             } else {
-                code.append(formatIndented("mov rax, [rbp+%d]", (i - PARAM_REGISTERS.size()) * 8 + 16));
-                code.append(formatIndented("mov [rbp-%d], rax", locals.get(procedure.getFormalParameters().get(i).getIdentifier()) * 8));
+                nonStructIndexes.add(i);
             }
         }
-        // TODO read records
+        for (int i = nonStructIndexes.size() - 1; i >= 0; i--) {
+            Integer nonStructIndex = nonStructIndexes.get(i);
+            if (i < PARAM_REGISTERS.size()) {
+                code.append(formatIndented("mov [rbp-%d], %s", locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8, PARAM_REGISTERS.get(i)));
+            } else {
+                code.append(formatIndented("mov rax, [rbp+%d]", popCount * 8 + 16));
+                code.append(formatIndented("mov [rbp-%d], rax", locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8));
+                popCount++;
+            }
+        }
         // TODO init local vars 0
 
         while (!statements.isEmpty()) {
@@ -172,27 +191,45 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final CallExpression callExpression) {
+        List<Integer> structIndexes = new ArrayList<>();
         List<Declaration> formalParameters = symbolTable.getFunction(callExpression.getIdentifier()).getFormalParameters();
+        int pushCount = 0;
         for (int i = 0; i < callExpression.getParameters().size(); i++) {
-            callExpression.getParameters().get(i).accept(this);
-            if (i < PARAM_REGISTERS.size()) {
-                if (formalParameters.get(i).isReference()) {
-                    popReference(PARAM_REGISTERS.get(i));
-                } else {
-                    pop(PARAM_REGISTERS.get(i));
-                }
+            Declaration formalParam = formalParameters.get(i);
+            if (formalParam.getType() instanceof RecordType && !formalParam.isReference()) {
+                structIndexes.add(i);
             } else {
-                if (formalParameters.get(i).isReference()) {
-                    popReference("rax");
+                callExpression.getParameters().get(i).accept(this);
+                int paramCount = i - structIndexes.size();
+                if (paramCount < PARAM_REGISTERS.size()) {
+                    if (formalParam.isReference()) {
+                        popReference(PARAM_REGISTERS.get(paramCount));
+                    } else {
+                        pop(PARAM_REGISTERS.get(paramCount));
+                    }
                 } else {
-                    pop("rax");
+                    if (formalParam.isReference()) {
+                        popReference("rax");
+                    } else {
+                        pop("rax");
+                    }
+                    push("rax");
+                    pushCount++;
                 }
-                push("rax");
             }
         }
-        // TODO pass records
+        for (Integer structIndex : structIndexes) {
+            callExpression.getParameters().get(structIndex).accept(this);
+            Struct record = symbolTable.getRecordType(((RecordType) formalParameters.get(structIndex).getType()).getIdentifier());
+            popReference("rax");
+            for (int i = 0; i < record.getDeclarations().size(); i++) {
+                addIndented("mov rbx, [rax-%d]", (i + 1) * 8);
+                push("rbx");
+                pushCount++;
+            }
+        }
         addIndented("call %s", callExpression.getIdentifier());
-        for (int i = 0; i < callExpression.getParameters().size() - PARAM_REGISTERS.size(); i++) {
+        for (int i = 0; i < pushCount; i++) {
             pop("rdi");
         }
         push("rax");
@@ -203,13 +240,6 @@ public class CodeGenerator extends BaseAstVisitor {
         super.visit(callStatement);
         pop("rax"); // unused return value from CallExpression
     }
-
-    @Override
-    public void visit(DeclarationStatement declarationStatement) {
-        super.visit(declarationStatement);
-        // TODO maybe use this for declarations because of structs
-    }
-
 
     @Override
     public void visit(final Declaration declaration) {
