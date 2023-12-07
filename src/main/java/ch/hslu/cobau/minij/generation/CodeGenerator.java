@@ -94,30 +94,30 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final Unit program) {
         program.visitDeclarations(this);
         code.append(formatUnindented("""
-                DEFAULT REL
-                extern writeInt
-                extern writeChar
-                extern _exit
-                extern readInt
-                extern readChar
-                section .data
-                    ALIGN 8
-                """));
+                                             DEFAULT REL
+                                             extern writeInt
+                                             extern writeChar
+                                             extern _exit
+                                             extern readInt
+                                             extern readChar
+                                             section .data
+                                                 ALIGN 8
+                                             """));
         for (String global : globals) {
             code.append(formatIndented("%s dq 0", global));
         }
         code.append(formatUnindented("""
-                section .text
-                global _start
-                _start:
-                    push rbp
-                    mov rbp, rsp
-                    call main
-                    mov rsp, rbp
-                    pop rbp
-                    mov rdi, rax
-                    call _exit
-                        """));
+                                             section .text
+                                             global _start
+                                             _start:
+                                                 push rbp
+                                                 mov rbp, rsp
+                                                 call main
+                                                 mov rsp, rbp
+                                                 pop rbp
+                                                 mov rdi, rax
+                                                 call _exit
+                                                     """));
         program.visitFunctions(this);
     }
 
@@ -127,15 +127,31 @@ public class CodeGenerator extends BaseAstVisitor {
         super.visit(procedure);
         code.append(formatUnindented("%s:", currentScope));
         code.append(formatIndented("""
-                push rbp
-                mov rbp, rsp
-                """));
+                                           push rbp
+                                           mov rbp, rsp
+                                           """));
 
-        Map<String, Integer> locals = getLocals();
-        int stackSize = locals.size() * 8;
+        int stackSize = getLocals().size() * 8;
         stackSize += stackSize % 16; // align to 16 bytes
         code.append(formatIndented("sub rsp, %d", stackSize));
 
+        assignParamsToLocals(procedure);
+
+        while (!statements.isEmpty()) {
+            code.append(statements.poll());
+        }
+
+        code.append(formatUnindented("""
+                                             _%sEnd:
+                                                 mov rsp, rbp
+                                                 pop rbp
+                                                 ret
+                                             """, currentScope));
+        currentScope = null;
+    }
+
+    private void assignParamsToLocals(final Function procedure) {
+        Map<String, Integer> locals = getLocals();
         List<Integer> nonStructIndexes = new ArrayList<>();
         List<Declaration> formalParameters = procedure.getFormalParameters();
         int popCount = 0;
@@ -147,7 +163,8 @@ public class CodeGenerator extends BaseAstVisitor {
                 for (int declarationIndex = recordDeclarations.size() - 1; declarationIndex >= 0; declarationIndex--) {
                     Declaration recordDeclaration = recordDeclarations.get(declarationIndex);
                     code.append(formatIndented("mov rax, [rbp+%d]", popCount * 8 + 16));
-                    code.append(formatIndented("mov [rbp-%d], rax", locals.get(format("%s.%s", formalParam.getIdentifier(), recordDeclaration.getIdentifier())) * 8));
+                    code.append(formatIndented("mov [rbp-%d], rax", locals.get(
+                            format("%s.%s", formalParam.getIdentifier(), recordDeclaration.getIdentifier())) * 8));
                     popCount++;
                 }
             } else {
@@ -157,25 +174,16 @@ public class CodeGenerator extends BaseAstVisitor {
         for (int i = nonStructIndexes.size() - 1; i >= 0; i--) {
             Integer nonStructIndex = nonStructIndexes.get(i);
             if (i < PARAM_REGISTERS.size()) {
-                code.append(formatIndented("mov [rbp-%d], %s", locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8, PARAM_REGISTERS.get(i)));
+                code.append(formatIndented("mov [rbp-%d], %s",
+                                           locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8,
+                                           PARAM_REGISTERS.get(i)));
             } else {
                 code.append(formatIndented("mov rax, [rbp+%d]", popCount * 8 + 16));
-                code.append(formatIndented("mov [rbp-%d], rax", locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8));
+                code.append(formatIndented("mov [rbp-%d], rax",
+                                           locals.get(formalParameters.get(nonStructIndex).getIdentifier()) * 8));
                 popCount++;
             }
         }
-
-        while (!statements.isEmpty()) {
-            code.append(statements.poll());
-        }
-
-        code.append(formatUnindented("""
-                _%sEnd:
-                    mov rsp, rbp
-                    pop rbp
-                    ret
-                """, currentScope));
-        currentScope = null;
     }
 
     @Override
@@ -187,11 +195,20 @@ public class CodeGenerator extends BaseAstVisitor {
         addIndented("jmp _%sEnd", currentScope);
     }
 
-
     @Override
     public void visit(final CallExpression callExpression) {
+        int pushCount = setParamsForCall(callExpression);
+        addIndented("call %s", callExpression.getIdentifier());
+        for (int i = 0; i < pushCount; i++) {
+            pop("rdi");
+        }
+        push("rax");
+    }
+
+    private int setParamsForCall(final CallExpression callExpression) {
         List<Integer> structIndexes = new ArrayList<>();
-        List<Declaration> formalParameters = symbolTable.getFunction(callExpression.getIdentifier()).getFormalParameters();
+        List<Declaration> formalParameters = symbolTable.getFunction(callExpression.getIdentifier())
+                .getFormalParameters();
         int pushCount = 0;
         for (int i = 0; i < callExpression.getParameters().size(); i++) {
             Declaration formalParam = formalParameters.get(i);
@@ -217,7 +234,8 @@ public class CodeGenerator extends BaseAstVisitor {
         }
         for (Integer structIndex : structIndexes) {
             callExpression.getParameters().get(structIndex).accept(this);
-            Struct record = symbolTable.getRecordType(((RecordType) formalParameters.get(structIndex).getType()).getIdentifier());
+            Struct record = symbolTable.getRecordType(
+                    ((RecordType) formalParameters.get(structIndex).getType()).getIdentifier());
             popReference("rax");
             for (int i = 0; i < record.getDeclarations().size(); i++) {
                 addIndented("mov rbx, [rax-%d]", (i + 1) * 8);
@@ -225,11 +243,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 pushCount++;
             }
         }
-        addIndented("call %s", callExpression.getIdentifier());
-        for (int i = 0; i < pushCount; i++) {
-            pop("rdi");
-        }
-        push("rax");
+        return pushCount;
     }
 
     @Override
@@ -240,35 +254,44 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final Declaration declaration) {
-        String identifier = declaration.getIdentifier();
-        if (currentScope != null) {
-            final Map<String, Integer> locals = getLocals();
-            int position = (locals.size() + 1);
-            if (!locals.containsKey(identifier)) {
-                locals.put(identifier, position);
-                if (declaration.getType() instanceof RecordType) {
-                    Struct recordType = symbolTable.getRecordType(((RecordType) declaration.getType()).getIdentifier());
-                    for (Declaration recordTypeDeclaration : recordType.getDeclarations()) {
-                        locals.put(format("%s.%s", identifier, recordTypeDeclaration.getIdentifier()), ++position);
-                    }
-                }
-            }
+        if (currentScope == null) {
+            addGlobal(declaration);
         } else {
-            globals.add(identifier);
-            if (declaration.getType() instanceof RecordType) {
-                Struct recordType = symbolTable.getRecordType(((RecordType) declaration.getType()).getIdentifier());
-                for (Declaration recordTypeDeclaration : recordType.getDeclarations()) {
-                    globals.add(format("%s.%s", identifier, recordTypeDeclaration.getIdentifier()));
-                }
+            addLocal(declaration);
+        }
+    }
+
+    private void addGlobal(final Declaration declaration) {
+        globals.add(declaration.getIdentifier());
+        if (declaration.getType() instanceof RecordType) {
+            globals.addAll(getRecordFields(declaration));
+        }
+    }
+
+    private void addLocal(final Declaration declaration) {
+        final Map<String, Integer> locals = getLocals();
+        int position = (locals.size() + 1);
+        locals.put(declaration.getIdentifier(), position);
+        if (declaration.getType() instanceof RecordType) {
+            for (String recordField : getRecordFields(declaration)) {
+                locals.put(recordField, ++position);
             }
         }
     }
 
+    private List<String> getRecordFields(final Declaration declaration) {
+        final String identifier = declaration.getIdentifier();
+        final Struct recordType = symbolTable.getRecordType(((RecordType) declaration.getType()).getIdentifier());
+        return recordType.getDeclarations().stream()
+                .map(recordTypeDeclaration -> format("%s.%s", identifier, recordTypeDeclaration.getIdentifier()))
+                .toList();
+    }
 
     @Override
     public void visit(final VariableAccess variable) {
         String identifier = variable.getIdentifier();
-        Optional<Declaration> formalParam = symbolTable.getFunction(currentScope).getFormalParameters().stream().filter(param -> param.getIdentifier().equals(identifier)).findFirst();
+        Optional<Declaration> formalParam = symbolTable.getFunction(currentScope).getFormalParameters().stream()
+                .filter(param -> param.getIdentifier().equals(identifier)).findFirst();
         if (formalParam.isPresent() && formalParam.get().isReference()) {
             addIndented("mov rax, %s", getVariable(identifier));
         } else {
@@ -293,7 +316,8 @@ public class CodeGenerator extends BaseAstVisitor {
         Type resultType = fieldAccess.getBase().getResultType(symbolTable, symbolTable.getScope(currentScope));
         assert resultType instanceof RecordType;
         Struct record = symbolTable.getRecordType(((RecordType) resultType).getIdentifier());
-        int index = record.getDeclarations().stream().map(Declaration::getIdentifier).toList().indexOf(fieldAccess.getField());
+        int index = record.getDeclarations().stream().map(Declaration::getIdentifier).toList()
+                .indexOf(fieldAccess.getField());
         popReference("rax");
         addIndented("lea rax, [rax-%d]", (index + 1) * 8);
         pushReference("rax");
@@ -362,10 +386,10 @@ public class CodeGenerator extends BaseAstVisitor {
                     case TIMES -> addIndented("imul rax, rbx");
                     case DIV, MOD -> {
                         addIndented("""
-                                mov rdx, 0
-                                cqo
-                                idiv rbx
-                                """);
+                                            mov rdx, 0
+                                            cqo
+                                            idiv rbx
+                                            """);
                         if (BinaryOperator.MOD.equals(binaryExpression.getBinaryOperator())) {
                             addIndented("mov rax, rdx");
                         }
@@ -390,24 +414,23 @@ public class CodeGenerator extends BaseAstVisitor {
                 pop("rax");
                 switch (binaryExpression.getBinaryOperator()) {
                     case AND -> addIndented("""
-                            cmp rax, 0
-                            je %s
-                            """, boolLabel);
+                                                    cmp rax, 0
+                                                    je %s
+                                                    """, boolLabel);
                     case OR -> addIndented("""
-                            cmp rax, 1
-                            je %s
-                            """, boolLabel);
+                                                   cmp rax, 1
+                                                   je %s
+                                                   """, boolLabel);
                 }
                 binaryExpression.getRight().accept(this);
                 pop("rax");
                 add("%s:", boolLabel);
                 addIndented("""
-                        cmp rax, 1
-                        sete al
-                        movsx rax, al
-                        """);
+                                    cmp rax, 1
+                                    sete al
+                                    movsx rax, al
+                                    """);
             }
-
         }
         push("rax");
     }
