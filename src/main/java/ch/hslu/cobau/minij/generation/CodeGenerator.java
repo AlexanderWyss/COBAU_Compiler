@@ -304,8 +304,8 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final IfStatement ifStatement) {
         ifStatement.visitExpression(this);
         int ifCount = ifLabels++;
-        String ifLabel = format("_if%d", ifCount);
-        String endIfLabel = format("_endIf%d", ifCount);
+        String ifLabel = format("_else%d", ifCount);
+        String endIfLabel = format("_endElse%d", ifCount);
         pop("rax");
         addIndented("cmp rax, 0");
         addIndented("je %s", ifLabel);
