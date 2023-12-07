@@ -164,7 +164,6 @@ public class CodeGenerator extends BaseAstVisitor {
                 popCount++;
             }
         }
-        // TODO init local vars 0
 
         while (!statements.isEmpty()) {
             code.append(statements.poll());
