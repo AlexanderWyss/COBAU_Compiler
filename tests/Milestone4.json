@@ -389,5 +389,12 @@
         "expectedExitCode" : "0",
         "expectedOutput"   : "123124",
         "score"            : 0.5
+    },
+    {
+        "name"             : "(custom) parameter order (noticed some cases which are not covered by existing tests, like correct order of multiple structs)",
+        "input"            : "record coord3d {\n   int x;\n   int y;\n   int z;\n}\nvoid print(int a, coord3d b, coord3d& c, coord3d d, int& e) {\n    writeInt(a);\n    writeInt(b.x);\n    writeInt(b.y);\n    writeInt(b.z);\n    writeInt(c.x);\n    writeInt(c.y);\n    writeInt(c.z);\n    writeInt(d.x);\n    writeInt(d.y);\n    writeInt(d.z);\n    writeInt(e);\n}\nint main() {\n    coord3d x;\n    coord3d y;\n    coord3d z;\n    int a;\n    x.x = 1;\n    x.y = 2;\n    x.z = 3;\n    y.x = 4;\n    y.y = 5;\n    y.z = 6;\n    z.x = 7;\n    z.y = 8;\n    z.z = 9;\n    a=10;\n    print(0, x, y, z, a);\n    return 0;\n}",
+        "expectedExitCode" : "0",
+        "expectedOutput"   : "012345678910",
+        "score"            : 0
     }  ]
 }
