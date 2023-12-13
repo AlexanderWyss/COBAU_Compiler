@@ -18,6 +18,10 @@ import java.util.*;
 
 import static java.lang.String.format;
 
+/**
+ * We are only using the stack to pass along vars, each expression pushes its result.
+ * For records we basically pretend they are multiple variables
+ */
 public class CodeGenerator extends BaseAstVisitor {
     private final StringBuilder code = new StringBuilder();
     private final SymbolTable symbolTable;
@@ -79,6 +83,7 @@ public class CodeGenerator extends BaseAstVisitor {
     private void pop(String register) {
         addIndented("pop %s", register);
         if (expressionByReference.pop()) {
+            // we want to pop a value not a ref, so move the value of the reference
             addIndented("mov %s, [%s]", register, register);
         }
     }
@@ -86,6 +91,7 @@ public class CodeGenerator extends BaseAstVisitor {
     private void popReference(String register) {
         addIndented("pop %s", register);
         if (!expressionByReference.pop()) {
+            // pls never come in here, it shouldn't
             throw new UnsupportedOperationException("Not a reference");
         }
     }
@@ -151,11 +157,12 @@ public class CodeGenerator extends BaseAstVisitor {
     }
 
     private void assignParamsToLocals(final Function procedure) {
+        // This is a mess, but hey it works
         Map<String, Integer> locals = getLocals();
         List<Integer> nonStructIndexes = new ArrayList<>();
         List<Declaration> formalParameters = procedure.getFormalParameters();
         int popCount = 0;
-        for (int i = 0; i < formalParameters.size(); i++) {
+        for (int i = 0; i < formalParameters.size(); i++) { // fist handle all records (not ref)
             Declaration formalParam = formalParameters.get(i);
             if (formalParam.getType() instanceof RecordType && !formalParam.isReference()) {
                 Struct record = symbolTable.getRecordType(((RecordType) formalParam.getType()).getIdentifier());
@@ -171,7 +178,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 nonStructIndexes.add(i);
             }
         }
-        for (int i = nonStructIndexes.size() - 1; i >= 0; i--) {
+        for (int i = nonStructIndexes.size() - 1; i >= 0; i--) { // now the normal params
             Integer nonStructIndex = nonStructIndexes.get(i);
             if (i < PARAM_REGISTERS.size()) {
                 code.append(formatIndented("mov [rbp-%d], %s",
@@ -190,6 +197,7 @@ public class CodeGenerator extends BaseAstVisitor {
     public void visit(final ReturnStatement returnStatement) {
         super.visit(returnStatement);
         if (returnStatement.getExpression() != null) {
+            // set return value to rax,
             pop("rax");
         }
         addIndented("jmp _%sEnd", currentScope);
@@ -206,11 +214,12 @@ public class CodeGenerator extends BaseAstVisitor {
     }
 
     private int setParamsForCall(final CallExpression callExpression) {
+        // what can i say, this is a mess too, records are a pain in the a**
         List<Integer> structIndexes = new ArrayList<>();
         List<Declaration> formalParameters = symbolTable.getFunction(callExpression.getIdentifier())
                 .getFormalParameters();
         int pushCount = 0;
-        for (int i = 0; i < callExpression.getParameters().size(); i++) {
+        for (int i = 0; i < callExpression.getParameters().size(); i++) { // fist do all normal params
             Declaration formalParam = formalParameters.get(i);
             if (formalParam.getType() instanceof RecordType && !formalParam.isReference()) {
                 structIndexes.add(i);
@@ -224,7 +233,8 @@ public class CodeGenerator extends BaseAstVisitor {
                         pop(PARAM_REGISTERS.get(paramCount));
                     }
                 } else {
-                    if (formalParam.isReference()) {
+                    // its already on the stack from the expression
+                    if (formalParam.isReference()) { // just so our expressionByReference is false, probably not actually needed
                         popReference("rax");
                         push("rax");
                     }
@@ -232,13 +242,14 @@ public class CodeGenerator extends BaseAstVisitor {
                 }
             }
         }
-        for (Integer structIndex : structIndexes) {
+        for (int i = structIndexes.size() - 1; i >= 0; i--) {  // now all records (non ref)
+            Integer structIndex = structIndexes.get(i);
             callExpression.getParameters().get(structIndex).accept(this);
             Struct record = symbolTable.getRecordType(
                     ((RecordType) formalParameters.get(structIndex).getType()).getIdentifier());
             popReference("rax");
-            for (int i = 0; i < record.getDeclarations().size(); i++) {
-                addIndented("mov rbx, [rax-%d]", (i + 1) * 8);
+            for (int declarationIndex = 0; declarationIndex < record.getDeclarations().size(); declarationIndex++) {
+                addIndented("mov rbx, [rax-%d]", (declarationIndex + 1) * 8);
                 push("rbx");
                 pushCount++;
             }
@@ -375,6 +386,7 @@ public class CodeGenerator extends BaseAstVisitor {
 
     @Override
     public void visit(final BinaryExpression binaryExpression) {
+        // how many switch statements can we fit into a single function? (a lot)
         switch (binaryExpression.getBinaryOperator()) {
             case PLUS, MINUS, TIMES, DIV, MOD, EQUAL, UNEQUAL, LESSER, LESSER_EQ, GREATER, GREATER_EQ -> {
                 super.visit(binaryExpression);
@@ -424,7 +436,7 @@ public class CodeGenerator extends BaseAstVisitor {
                 }
                 binaryExpression.getRight().accept(this);
                 pop("rax");
-                add("%s:", boolLabel);
+                add("%s:", boolLabel); // short circuit label
                 addIndented("""
                                     cmp rax, 1
                                     sete al
